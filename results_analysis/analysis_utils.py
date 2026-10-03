@@ -93,7 +93,7 @@ def dict_to_df_fold_seed_XAI_metric(d):
     return df
 
 
-def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.75):
+def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.75, dataset_name=None):
     files = os.listdir(path_to_metrics)
 
     metrics_files = [f for f in files if f.startswith("Final_metrics_runs")]
@@ -114,8 +114,12 @@ def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.7
                         "shapley_cam_cnn": "SC-Bk", "shapley_cam_proj": "SC-Prj", "shapley_cam_att": "SC-Att"}
 
     experiments = {"standard": dict(), "explain": dict(), 'XAI': dict()}
+    if dataset_name!=None:
+        dataset_name = dataset_name + '_'
+    else:
+        dataset_name = ''
     for f in metrics_files:
-        exp_feats = f.replace("Final_metrics_runs__"+lesion+"_", "").split('_')
+        exp_feats = f.replace("Final_metrics_runs__"+dataset_name+lesion+"_", "").split('_')
         orig_exp_name = '_'.join(exp_feats[:-1])
         if orig_exp_name not in exp_name_tr.keys():
             continue
