@@ -92,6 +92,32 @@ def dict_to_df_fold_seed_XAI_metric(d):
 
     return df
 
+def dict_to_df_XAI_perturbation_metric(d):
+    rows = []
+
+    for model, seeds in d.items():
+        for seed, folds in seeds.items():
+            for fold, methods in folds.items():
+                    for method, metrics in methods.items():
+                        row = {
+                            "Model": model,
+                            "Seed": seed,
+                            "Fold": fold,
+                            "Method": method
+                        }
+
+                        row.update(metrics)
+
+                        rows.append(row)
+
+    df = pd.DataFrame(rows)
+
+    df = df.set_index(
+        ["Model", "Seed", "Fold", "Method"]
+    ).sort_index()
+
+    return df
+
 
 def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.75, dataset_name=None):
     files = os.listdir(path_to_metrics)
@@ -177,5 +203,39 @@ def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.7
                     experiments[mtype][exp][model_name][seed][K]["Acc"] = pred_results["Accuracy"]
                     experiments[mtype][exp][model_name][seed][K]["AUC"] = pred_results["AUC-ROC"]
                     experiments[mtype][exp][model_name][seed][K]["AUPRC"] = pred_results["AUPRC"]
+    return experiments
+
+def create_xai_perturbation_dict_from_results(path_to_metrics):
+    files = os.listdir(path_to_metrics)
+
+    metrics_files = [f for f in files if f.endswith(".jsonl")]
+
+    model_name_tr = {"CustomDenseNet": "DenseNet", "CustomMobileNetV3": "MobileNet",
+                    "CustomResNetBinary50": "ResNet50", "CustomResNetBinary": "ResNet18",
+                    "EfficientNetB0": "EfficientNet"}
+    
+    x_method_name_tr = {"contribution": "$M_C^{+}$", "attention": "Att", "grad_cam_cnn": "GC-Bk", 
+                        "grad_cam_proj": "GC-Prj", "grad_cam_att": "GC-Att",
+                        "eigen_cam_cnn": "EC-Bk", "eigen_cam_proj": "EC-Prj", "eigen_cam_att": "EC-Att",
+                        "shapley_cam_cnn": "SC-Bk", "shapley_cam_proj": "SC-Prj", "shapley_cam_att": "SC-Att"}
+
+    experiments = {}
+    for f in metrics_files:
+        with open(os.path.join(path_to_metrics, f)) as jfile:
+            exp_results = read_jsonl(jfile)
+        for r in exp_results:
+            arch = model_name_tr[r['Architecture']]
+            seed = r['Seed']
+            K = r['Model File'].split('.')[0].split('_')[-1]
+            if arch not in experiments:
+                experiments[arch] = {}
+            if seed not in experiments[arch]:
+                experiments[arch][seed] = {}
+            if K not in experiments[arch][seed]:
+                experiments[arch][seed][K] = {}
+            for method, metrics in r['Faithfulness'].items():
+                experiments[arch][seed][K][x_method_name_tr[method]] = {'AUC MoRF': metrics['AUC MoRF'][0], 
+                                                                        'AUC LeRF': metrics['AUC LeRF'][0],
+                                                                        'Delta AUC': metrics['Delta AUC'][0]}
     return experiments
 

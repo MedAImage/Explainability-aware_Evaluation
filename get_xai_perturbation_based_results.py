@@ -136,102 +136,6 @@ def gaussian_filter(x, kernel_size, sigma):
     return y.squeeze(0)
 
 
-def generate_tissue_baseline(
-    image,
-    stats_kernel_size=101,
-    stats_sigma=30.0,
-    texture_kernel_size=21,
-    texture_sigma=6.0,
-    seed=None,
-    eps=1e-6
-):
-    """
-    Generates a tissue-like perturbation baseline.
-
-    Parameters
-    ----------
-    image : Tensor [C,H,W]
-        Input mammogram.
-
-    stats_kernel_size :
-        Scale used to estimate local mean and variance.
-
-    stats_sigma :
-        Gaussian sigma used for local statistics.
-
-    texture_kernel_size :
-        Kernel used to spatially correlate random noise.
-
-    texture_sigma :
-        Spatial correlation scale of the random texture.
-
-    seed :
-        Random seed. The same generated baseline should be reused
-        for all explanation methods.
-
-    Returns
-    -------
-    baseline : Tensor [C,H,W]
-    """
-
-    if seed is not None:
-        generator = torch.Generator(device=image.device)
-        generator.manual_seed(seed)
-    else:
-        generator = None
-
-    # Local mean
-    local_mean = gaussian_filter(
-        image,
-        stats_kernel_size,
-        stats_sigma
-    )
-
-    # Local variance: E[x²] - E[x]²
-    local_second_moment = gaussian_filter(
-        image ** 2,
-        stats_kernel_size,
-        stats_sigma
-    )
-
-    local_var = (
-        local_second_moment - local_mean ** 2
-    ).clamp_min(eps)
-
-    local_std = torch.sqrt(local_var)
-
-    # Random noise
-    noise = torch.randn(
-        image.shape,
-        device=image.device,
-        dtype=image.dtype,
-        generator=generator
-    )
-
-    # Introduce spatial correlation
-    noise = gaussian_filter(
-        noise,
-        texture_kernel_size,
-        texture_sigma
-    )
-
-    # Normalize correlated noise to unit standard deviation
-    noise = noise - noise.mean(dim=(-2, -1), keepdim=True)
-    noise = noise / (
-        noise.std(dim=(-2, -1), keepdim=True) + eps
-    )
-
-    # Generate locally matched texture
-    baseline = local_mean + local_std * noise
-    
-    baseline = baseline.clamp(
-    min=image.min(),
-    max=image.max()
-)
-
-    return baseline
-
-
 @torch.no_grad()
 def deletion_curve(
     model,
@@ -241,8 +145,7 @@ def deletion_curve(
     sigma=40.0,
     kernel_size=51,
     target_fn=None,
-    MoRF = True,
-    perturbed_image = None
+    MoRF = True
 ):
     """
     Computes a MoRF deletion curve using Gaussian blur as perturbation.
@@ -363,16 +266,10 @@ def deletion_curve(
     original = image.unsqueeze(0)      # [1,C,H,W]
     blurred = blurred.unsqueeze(0)     # [1,C,H,W]
     
-    # perturbed = (
-    #     original * (1.0 - masks)
-    #     + blurred * masks
-    # )
-    
     perturbed = (
         original * (1.0 - masks)
-        + perturbed_image * masks
+        + blurred * masks
     )
-
     
     # ------------------------------------------------------------
     # 5. Evaluate all perturbation levels in one batch
@@ -560,8 +457,6 @@ def evaluate_faithfulness(testDataset, positive_classes, modelName, bestModelPth
             
             probabilities = torch.sigmoid(outputs)
             
-            tissue_baseline = generate_tissue_baseline(inputs.squeeze())
-
             for img, _ ,label, prob, logits in zip(inputs.tolist(), rois ,labels.tolist(), probabilities.tolist(), outputs.tolist()):
 
                 if label[0]!=1 or logits[0]<=0:
@@ -589,13 +484,13 @@ def evaluate_faithfulness(testDataset, positive_classes, modelName, bestModelPth
 
                 for tmap in map_results:
                     # print('----------------------', tmap, '------------------------')
-                    percentages_morf, logits_morf, perturbed_images, mask_images = deletion_curve(model, inputs[0], torch.tensor(map_results[tmap]['map'], device=device), MoRF=True, perturbed_image=tissue_baseline)
+                    percentages_morf, logits_morf, perturbed_images, mask_images = deletion_curve(model, inputs[0], torch.tensor(map_results[tmap]['map'], device=device), MoRF=True)
         
                     # print(percentages_morf, logits_morf)
 
                     auc_morf = perturbation_auc(logits_morf, percentages_morf)
 
-                    percentages_lerf, logits_lerf, _, _ = deletion_curve(model, inputs[0], torch.tensor(map_results[tmap]['map'], device=device), MoRF=False, perturbed_image=tissue_baseline)
+                    percentages_lerf, logits_lerf, _, _ = deletion_curve(model, inputs[0], torch.tensor(map_results[tmap]['map'], device=device), MoRF=False)
         
                     # print(percentages_lerf, logits_lerf)
 

@@ -1,11 +1,6 @@
-import json
 import sys
-import os
-import numpy as np
-import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_XAI_metric
 
 
