@@ -100,7 +100,7 @@ def plot_model_threshold_heatmap(
     blocks = []
     for model in model_order:
         sub = dfr[dfr['Model'] == model].copy().set_index('Experiment')
-        cols = [f'{metric_prefix}_{t}' for t in thresholds]
+        cols = [f'{metric_prefix}_p_{t}' for t in thresholds]
         sub = sub[cols]
 
         if exp_order is not None:
@@ -142,6 +142,34 @@ def plot_model_threshold_heatmap(
 
     ax.set_ylim(len(full.index), -1.0)
 
+def df_to_latex_with_min_max(df, minmax_rows, minmax_columns):
+    df_str = df.round(2).astype(str)
+    # print(minmax_rows)
+    # print(minmax_columns)
+    for mMr in minmax_rows:
+        idx_min = df.loc(axis=0)[mMr,:].idxmin()
+        idx_max = df.loc(axis=0)[mMr,:].idxmax()    
+        for col, row_idx in idx_min.items():
+            if col in minmax_columns:
+                val = df.loc[row_idx, col]
+                new_val = f"{{\\color{{red}} {val:.2f} }}"
+                df_str.loc[row_idx, col] = new_val
+            else:
+                print(col, minmax_columns)
+
+        for col, row_idx in idx_max.items():
+            if col in minmax_columns:
+                val = df.loc[row_idx, col]
+                new_val = f"{{\\color{{mygreen}} {val:.2f} }}"
+                df_str.loc[row_idx, col] = new_val
+
+    latex_table = df_str.to_latex(escape=False)
+    latex_table = re.sub(' +', ' ', latex_table)
+    # print(latex_table) #float_format="%.2f"))
+
+    return latex_table
+
+
 if __name__ == "__main__":
 
     path_to_metrics = sys.argv[1]
@@ -161,14 +189,45 @@ if __name__ == "__main__":
     df_exp_temp = df_exp_75.rename(columns={"Precision":"P_exp", "Recall":"recall_exp", 
                                          "F1-score":"f1_exp", "Acc":"acc_exp", "AUC":"auc-roc_exp", "AUPRC":"auprc_exp"})
 
-    df_all = pd.concat([df_std, df_exp_temp], axis=1)
+
+    df_penalty_all = []
+    metrics = df_std.columns.to_list()
+    df_exp_th = [df_exp_25, df_exp_50, df_exp_75]    
+    for idx_m, metric in enumerate(metrics):
+        thresholds = [0.25, 0.50, 0.75]
+
+        df_metric = df_std[metric]
+        df_metric_penalty = []
+        for idx in range(len(df_exp_th)):
+            df_metric_explained = df_exp_th[idx][metric]
+            df_penalty = 1-df_metric_explained/df_metric
+            df_penalty = df_penalty.to_frame(name=metric+'_p_'+str(thresholds[idx]))
+
+            df_metric_penalty.append(df_penalty)
+
+        df_penalty_all.append(pd.concat(df_metric_penalty, axis=1))
+
+    df_penalty_all = pd.concat(df_penalty_all, axis=1)
+
+    # print(df_penalty_all)
+
+    penalty_metrics = df_penalty_all.columns.to_list()
+    penalty_075 = [m for m in penalty_metrics if m.endswith('0.75')]
+
+    df_all = pd.concat([df_std, df_exp_temp, df_penalty_all[penalty_075]], axis=1)
 
     df_mean_metrics = df_all.groupby(["Experiment","Model"]).agg("mean")
     print(df_mean_metrics)
 
-    # latex_table = df_mean_metrics.to_latex(escape=False)
-    # latex_table = re.sub(' +', ' ', latex_table)
-    # print(latex_table) 
+    backbone_order = ["DenseNet", "EfficientNet", "MobileNet", "ResNet18", "ResNet50"]
+    dconfig_order = ['Bl', 'P1', 'P2', 'A1', 'A2']
+    df_mean_metrics = df_mean_metrics.reorder_levels(["Model", "Experiment"]).reindex(backbone_order, level=0).reindex(dconfig_order, level=1)
+    minmax_rows = backbone_order
+    minmax_columns = df_std.columns.to_list() + df_exp_temp.columns.to_list()
+
+    latex_table = df_to_latex_with_min_max(df_mean_metrics, minmax_rows=minmax_rows, minmax_columns=minmax_columns)
+
+    print(latex_table) 
    
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 6))
@@ -220,30 +279,19 @@ if __name__ == "__main__":
 
     cbar_ax = fig.add_axes([0.90, 0.15, 0.02, 0.7])
 
-
     metrics = ['F1-score', 'AUC']
     titles = ['F1-score penalty', 'AUC penalty']
+    mean_penalty = (
+            df_penalty_all.groupby(["Experiment", "Model"])
+            .mean()#.rename(columns={metric: metric+'_'+str(thresholds[idx])})
+        )
+
+    thresholds = [0.25, 0.50, 0.75]
     for idx_m, metric in enumerate(metrics):
-        df_exp_th = [df_exp_25, df_exp_50, df_exp_75]
-        thresholds = [0.25, 0.50, 0.75]
-
-        df_metric = df_all[metric]
-        df_penalization_all = []
-        for idx in range(len(df_exp_th)):
-            df_metric_explained = df_exp_th[idx][metric]
-            df_penalization = 1-df_metric_explained/df_metric
-            df_penalization = df_penalization.to_frame(name=metric+'_'+str(thresholds[idx]))
-
-            mean_penalization = (
-                    df_penalization.groupby(["Experiment", "Model"])
-                    .mean().rename(columns={metric: 'f1_'+str(thresholds[idx])})
-                )
-            df_penalization_all.append(mean_penalization)
-        
-        df_penalization_all = pd.concat(df_penalization_all, axis=1)
+        df_penalty_metric = mean_penalty[[metric+'_p_'+str(th) for th in thresholds]]
 
         plot_model_threshold_heatmap(
-            df_penalization_all,
+            df_penalty_metric,
             metric_prefix=metric,
             ax=axes_flat[idx_m],
             exp_order=exp_order,
