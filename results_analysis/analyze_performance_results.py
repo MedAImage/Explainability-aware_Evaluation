@@ -9,7 +9,6 @@ import matplotlib.colors as mcolors
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_metric
 from scipy.stats import spearmanr, kendalltau
 
-
 def _darken(color, factor=0.65):
     rgb = np.array(mcolors.to_rgb(color))
     return tuple(np.clip(rgb * factor, 0, 1))
@@ -173,6 +172,49 @@ def df_to_latex_with_min_max(df, minmax_rows, minmax_columns):
 
     return latex_table
 
+def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
+    index = pd.MultiIndex.from_product([[lesion], metrics, backbones], names=["Lesion", "Metric", "Backbone"])
+
+    columns = []
+    for th in df_exp:
+        columns.append(("Standard vs. explainability-aware", f"$\tau={th}$"))
+    columns.append(("Threshold sensitivity", r"$0.25$ vs. $0.75$"))
+    columns = pd.MultiIndex.from_tuples(columns)
+
+    df_corr = pd.DataFrame(index=index, columns=columns, dtype=float)    
+    for metric in metrics:
+        for bk in backbones:
+            # print(f"-------------- METRICS FOR {bk} --------------")
+            if bk=="Global":
+                values_std = df_std[metric].to_numpy()
+            else:
+                values_std = df_std.loc(axis=0)[:,bk][metric].to_numpy()
+            for th in df_exp:
+                if bk=="Global":
+                    values_exp = df_exp[th][metric].to_numpy()
+                else:
+                    values_exp = df_exp[th].loc(axis=0)[:,bk][metric].to_numpy()
+                spearman_r, spearman_p = spearmanr(
+                    values_std,
+                    values_exp
+                )
+                df_corr.loc[(lesion, metric, bk), ("Standard vs. explainability-aware", f"$\tau={th}$")] = spearman_r
+                # print(f"Spearman correlation between std and exp_{th} for {metric}: {spearman_r} ({spearman_p})")
+
+            if bk=="Global":
+                values_exp25 = df_exp[0.25][metric].to_numpy()
+                values_exp75 = df_exp[0.75][metric].to_numpy()        
+            else:
+                values_exp25 = df_exp[0.25].loc(axis=0)[:,bk][metric].to_numpy()
+                values_exp75 = df_exp[0.75].loc(axis=0)[:,bk][metric].to_numpy()        
+
+            spearman_r, spearman_p = spearmanr(
+                values_exp25,
+                values_exp75
+            )
+            df_corr.loc[(lesion, metric, bk), ("Threshold sensitivity", r"$0.25$ vs. $0.75$")] = spearman_r
+            # print(f"Spearman correlation between exp_25 and exp_75 for {metric}: {spearman_r} ({spearman_p})")        
+    return df_corr
 
 if __name__ == "__main__":
 
@@ -242,37 +284,13 @@ if __name__ == "__main__":
     df_mean_exp_75 = df_exp_75.groupby(["Experiment","Model"]).agg("mean")
     
     df_mean_exp = {0.25: df_mean_exp_25, 0.50: df_mean_exp_50, 0.75: df_mean_exp_75}
-   
-    metrics = ['F1-score', 'AUC']
-    backbone = "EfficientNet"
-    for metric in metrics:
-        values_std = df_mean_std.loc(axis=0)[:,:][metric].to_numpy()
-        for th in df_mean_exp:
-            values_exp = df_mean_exp[th].loc(axis=0)[:,:][metric].to_numpy()
-            spearman_r, spearman_p = spearmanr(
-                values_std,
-                values_exp
-            )
-            kendall_v, kendall_p = kendalltau(
-                values_std,
-                values_exp
-            )
 
-            print(f"Spearman correlation between std and exp_{th} for {metric}: {spearman_r} ({spearman_p})")
-            print(f"Kendall tau between std and exp_{th} for {metric}: {kendall_v} ({kendall_p})")
-        values_exp25 = df_mean_exp[0.25].loc(axis=0)[:,:][metric].to_numpy()
-        values_exp75 = df_mean_exp[0.75].loc(axis=0)[:,:][metric].to_numpy()        
-        spearman_r, spearman_p = spearmanr(
-            values_exp25,
-            values_exp75
-        )
-        kendall_v, kendall_p = kendalltau(
-            values_exp25,
-            values_exp75
-        )
-        print(f"Spearman correlation between exp_25 and exp_75 for {metric}: {spearman_r} ({spearman_p})")        
-        print(f"Kendall tau between exp_25 and exp_75 for {metric}: {kendall_v} ({kendall_p})")
-            
+    metrics = ['F1-score', 'AUC']
+    backbones = ["DenseNet", "EfficientNet", "MobileNet", "ResNet18", "ResNet50", "Global"]
+
+    lesion_name = "Mass" if lesion=="Nodulo" else "Microcalcificaciones"
+    df_correlations = compute_df_correlations(df_mean_std, df_mean_exp, metrics, backbones, lesion_name)
+    print(df_correlations)
 
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 6))
