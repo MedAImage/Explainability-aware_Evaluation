@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_metric
+from scipy.stats import spearmanr, kendalltau
 
 
 def _darken(color, factor=0.65):
@@ -154,14 +155,17 @@ def df_to_latex_with_min_max(df, minmax_rows, minmax_columns):
                 val = df.loc[row_idx, col]
                 new_val = f"{{\\color{{red}} {val:.2f} }}"
                 df_str.loc[row_idx, col] = new_val
-            else:
-                print(col, minmax_columns)
 
         for col, row_idx in idx_max.items():
             if col in minmax_columns:
                 val = df.loc[row_idx, col]
                 new_val = f"{{\\color{{mygreen}} {val:.2f} }}"
                 df_str.loc[row_idx, col] = new_val
+            else:
+                val = df.loc[row_idx, col]
+                new_val = f"\\textbf{{{val:.2f}}}"
+                df_str.loc[row_idx, col] = new_val
+                
 
     latex_table = df_str.to_latex(escape=False)
     latex_table = re.sub(' +', ' ', latex_table)
@@ -209,7 +213,6 @@ if __name__ == "__main__":
 
     df_penalty_all = pd.concat(df_penalty_all, axis=1)
 
-    # print(df_penalty_all)
 
     penalty_metrics = df_penalty_all.columns.to_list()
     penalty_075 = [m for m in penalty_metrics if m.endswith('0.75')]
@@ -217,7 +220,6 @@ if __name__ == "__main__":
     df_all = pd.concat([df_std, df_exp_temp, df_penalty_all[penalty_075]], axis=1)
 
     df_mean_metrics = df_all.groupby(["Experiment","Model"]).agg("mean")
-    print(df_mean_metrics)
 
     backbone_order = ["DenseNet", "EfficientNet", "MobileNet", "ResNet18", "ResNet50"]
     dconfig_order = ['Bl', 'P1', 'P2', 'A1', 'A2']
@@ -225,10 +227,53 @@ if __name__ == "__main__":
     minmax_rows = backbone_order
     minmax_columns = df_std.columns.to_list() + df_exp_temp.columns.to_list()
 
+    # print(df_mean_metrics)
+
     latex_table = df_to_latex_with_min_max(df_mean_metrics, minmax_rows=minmax_rows, minmax_columns=minmax_columns)
 
-    print(latex_table) 
+    # print(latex_table) 
+    
+    
+    # Correlations
+    
+    df_mean_std = df_std.groupby(["Experiment","Model"]).agg("mean")
+    df_mean_exp_25 = df_exp_25.groupby(["Experiment","Model"]).agg("mean")
+    df_mean_exp_50 = df_exp_50.groupby(["Experiment","Model"]).agg("mean")
+    df_mean_exp_75 = df_exp_75.groupby(["Experiment","Model"]).agg("mean")
+    
+    df_mean_exp = {0.25: df_mean_exp_25, 0.50: df_mean_exp_50, 0.75: df_mean_exp_75}
    
+    metrics = ['F1-score', 'AUC']
+    backbone = "EfficientNet"
+    for metric in metrics:
+        values_std = df_mean_std.loc(axis=0)[:,:][metric].to_numpy()
+        for th in df_mean_exp:
+            values_exp = df_mean_exp[th].loc(axis=0)[:,:][metric].to_numpy()
+            spearman_r, spearman_p = spearmanr(
+                values_std,
+                values_exp
+            )
+            kendall_v, kendall_p = kendalltau(
+                values_std,
+                values_exp
+            )
+
+            print(f"Spearman correlation between std and exp_{th} for {metric}: {spearman_r} ({spearman_p})")
+            print(f"Kendall tau between std and exp_{th} for {metric}: {kendall_v} ({kendall_p})")
+        values_exp25 = df_mean_exp[0.25].loc(axis=0)[:,:][metric].to_numpy()
+        values_exp75 = df_mean_exp[0.75].loc(axis=0)[:,:][metric].to_numpy()        
+        spearman_r, spearman_p = spearmanr(
+            values_exp25,
+            values_exp75
+        )
+        kendall_v, kendall_p = kendalltau(
+            values_exp25,
+            values_exp75
+        )
+        print(f"Spearman correlation between exp_25 and exp_75 for {metric}: {spearman_r} ({spearman_p})")        
+        print(f"Kendall tau between exp_25 and exp_75 for {metric}: {kendall_v} ({kendall_p})")
+            
+
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 6))
 
@@ -283,7 +328,7 @@ if __name__ == "__main__":
     titles = ['F1-score penalty', 'AUC penalty']
     mean_penalty = (
             df_penalty_all.groupby(["Experiment", "Model"])
-            .mean()#.rename(columns={metric: metric+'_'+str(thresholds[idx])})
+            .mean()
         )
 
     thresholds = [0.25, 0.50, 0.75]
