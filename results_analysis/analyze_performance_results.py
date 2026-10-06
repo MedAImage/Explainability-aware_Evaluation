@@ -184,7 +184,6 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
     df_corr = pd.DataFrame(index=index, columns=columns, dtype=float)    
     for metric in metrics:
         for bk in backbones:
-            # print(f"-------------- METRICS FOR {bk} --------------")
             if bk=="Global":
                 values_std = df_std[metric].to_numpy()
             else:
@@ -199,7 +198,6 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
                     values_exp
                 )
                 df_corr.loc[(lesion, metric, bk), ("Standard vs. explainability-aware", f"$\tau={th}$")] = spearman_r
-                # print(f"Spearman correlation between std and exp_{th} for {metric}: {spearman_r} ({spearman_p})")
 
             if bk=="Global":
                 values_exp25 = df_exp[0.25][metric].to_numpy()
@@ -213,7 +211,6 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
                 values_exp75
             )
             df_corr.loc[(lesion, metric, bk), ("Threshold sensitivity", r"$0.25$ vs. $0.75$")] = spearman_r
-            # print(f"Spearman correlation between exp_25 and exp_75 for {metric}: {spearman_r} ({spearman_p})")        
     return df_corr
 
 if __name__ == "__main__":
@@ -291,6 +288,10 @@ if __name__ == "__main__":
     lesion_name = "Mass" if lesion=="Nodulo" else "Microcalcificaciones"
     df_correlations = compute_df_correlations(df_mean_std, df_mean_exp, metrics, backbones, lesion_name)
     print(df_correlations)
+    
+    latex_corr_table = df_correlations.round(2).to_latex(escape=False)    
+    
+    print(latex_corr_table)
 
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 6))
