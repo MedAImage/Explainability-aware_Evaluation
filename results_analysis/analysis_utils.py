@@ -226,7 +226,8 @@ def create_xai_perturbation_dict_from_results(path_to_metrics):
         for r in exp_results:
             arch = model_name_tr[r['Architecture']]
             seed = r['Seed']
-            K = r['Model File'].split('.')[0].split('_')[-1]
+            fields = r['Model File'].split('.')[0].split('_')
+            K = next((field for field in fields if field.startswith('K')), None)
             if arch not in experiments:
                 experiments[arch] = {}
             if seed not in experiments[arch]:
