@@ -197,7 +197,7 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
                     values_exp = df_exp[th][metric].to_numpy()
                 else:
                     values_exp = df_exp[th].loc(axis=0)[:,bk][metric].to_numpy()
-                spearman_r, spearman_p = spearmanr(
+                spearman_r, _ = spearmanr(
                     values_std,
                     values_exp
                 )
@@ -212,7 +212,7 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
                 values_exp25 = df_exp[0.25].loc(axis=0)[:,bk][metric].to_numpy()
                 values_exp75 = df_exp[0.75].loc(axis=0)[:,bk][metric].to_numpy()        
 
-            spearman_r, spearman_p = spearmanr(
+            spearman_r, _ = spearmanr(
                 values_exp25,
                 values_exp75
             )
@@ -274,12 +274,12 @@ if __name__ == "__main__":
 
     # print(df_mean_metrics)
 
-    latex_table = df_to_latex_with_min_max(df_mean_metrics, minmax_rows=minmax_rows, minmax_columns=minmax_columns)
+    # latex_table = df_to_latex_with_min_max(df_mean_metrics, minmax_rows=minmax_rows, minmax_columns=minmax_columns)
 
     # print(latex_table) 
     
     
-    # Correlations
+    # Correlations and dispersions
     
     df_mean_std = df_std.groupby(["Experiment","Model"]).agg("mean")
     df_mean_exp_25 = df_exp_25.groupby(["Experiment","Model"]).agg("mean")
@@ -295,11 +295,13 @@ if __name__ == "__main__":
     df_correlations = compute_df_correlations(df_mean_std, df_mean_exp, metrics, backbones, lesion_name)
     print(df_correlations)
     
-    latex_corr_table = df_correlations.round(2).to_latex(escape=False)    
+    # latex_corr_table = df_correlations.round(2).to_latex(escape=False)    
     
-    print(latex_corr_table)
+    # print(latex_corr_table)
 
 
+    #Plots for standard vs. explainability-aware performance
+    
     fig, axes = plt.subplots(2, 2, figsize=(12, 6))
 
     axes = axes.reshape(1, -1)
@@ -335,7 +337,7 @@ if __name__ == "__main__":
     plt.show()
 
 
-    #Plots for explainability penalization
+    #Plots for explainability penalty
     vmin = 0
     vmax = 1
 
