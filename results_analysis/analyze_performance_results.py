@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_metric
-from scipy.stats import spearmanr, kendalltau
+from scipy.stats import spearmanr, variation
 
 def _darken(color, factor=0.65):
     rgb = np.array(mcolors.to_rgb(color))
@@ -177,8 +177,10 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
 
     columns = []
     for th in df_exp:
-        columns.append(("Standard vs. explainability-aware", f"$\tau={th}$"))
-    columns.append(("Threshold sensitivity", r"$0.25$ vs. $0.75$"))
+        columns.append(("Rank correlation ($\rho$)", "Standard vs. explainability-aware", f"$\tau={th}$"))
+    columns.append(("Rank correlation ($\rho$)", "Threshold stability", r"$0.25$ vs. $0.75$"))
+    columns+=[("Relative score dispersion", "Standard",""),("Relative score dispersion", "Explainability-aware",f"$\tau=0.25$"), 
+              ("Relative score dispersion", "Explainability-aware",f"$\tau=0.5$"), ("Relative score dispersion","Explainability-aware",f"$\tau=0.75$")]
     columns = pd.MultiIndex.from_tuples(columns)
 
     df_corr = pd.DataFrame(index=index, columns=columns, dtype=float)    
@@ -188,6 +190,8 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
                 values_std = df_std[metric].to_numpy()
             else:
                 values_std = df_std.loc(axis=0)[:,bk][metric].to_numpy()
+            CV_std = variation(values_std)                
+            df_corr.loc[(lesion, metric, bk), ("Relative score dispersion", "Standard","")] = CV_std
             for th in df_exp:
                 if bk=="Global":
                     values_exp = df_exp[th][metric].to_numpy()
@@ -197,7 +201,9 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
                     values_std,
                     values_exp
                 )
-                df_corr.loc[(lesion, metric, bk), ("Standard vs. explainability-aware", f"$\tau={th}$")] = spearman_r
+                df_corr.loc[(lesion, metric, bk), ("Rank correlation ($\rho$)", "Standard vs. explainability-aware", f"$\tau={th}$")] = spearman_r
+                CV_exp = variation(values_exp)
+                df_corr.loc[(lesion, metric, bk), ("Relative score dispersion", "Explainability-aware",f"$\tau={th}$")] = CV_exp
 
             if bk=="Global":
                 values_exp25 = df_exp[0.25][metric].to_numpy()
@@ -210,7 +216,7 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
                 values_exp25,
                 values_exp75
             )
-            df_corr.loc[(lesion, metric, bk), ("Threshold sensitivity", r"$0.25$ vs. $0.75$")] = spearman_r
+            df_corr.loc[(lesion, metric, bk), ("Rank correlation ($\rho$)", "Threshold stability", r"$0.25$ vs. $0.75$")] = spearman_r
     return df_corr
 
 if __name__ == "__main__":
