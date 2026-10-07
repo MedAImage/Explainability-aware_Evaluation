@@ -266,6 +266,8 @@ if __name__ == "__main__":
 
     df_mean_metrics = df_all.groupby(["Experiment","Model"]).agg("mean")
 
+    print(df_mean_metrics)
+
     backbone_order = ["DenseNet", "EfficientNet", "MobileNet", "ResNet18", "ResNet50"]
     dconfig_order = ['Bl', 'P1', 'P2', 'A1', 'A2']
     df_mean_metrics = df_mean_metrics.reorder_levels(["Model", "Experiment"]).reindex(backbone_order, level=0).reindex(dconfig_order, level=1)
@@ -307,7 +309,6 @@ if __name__ == "__main__":
     axes = axes.reshape(1, -1)
 
     
-    # Flatten the axes array for easy iteration
     axes_flat = axes.flatten()
 
     figure_metrics = ["Recall", "F1-score", "AUC", "AUPRC"]
@@ -338,6 +339,7 @@ if __name__ == "__main__":
 
 
     #Plots for explainability penalty
+
     vmin = 0
     vmax = 1
 

@@ -120,9 +120,12 @@ def dict_to_df_XAI_perturbation_metric(d):
 
 
 def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.75, dataset_name=None):
-    files = os.listdir(path_to_metrics)
-
-    metrics_files = [f for f in files if f.startswith("Final_metrics_runs")]
+    if os.path.isdir(path_to_metrics):
+        files = os.listdir(path_to_metrics)
+        metrics_files = [f for f in files if f.startswith("Final_metrics_runs")]
+    else:
+        path_to_metrics, file = os.path.split(path_to_metrics)
+        metrics_files = [file]
 
     metrics_type = {"standard": "cuantitative_metrics", "explain": "explainable_weighted_metrics",
                     "XAI": "explainable_metrics"}
@@ -130,10 +133,11 @@ def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.7
     model_name_tr = {"CustomDenseNet": "DenseNet", "CustomMobileNetV3": "MobileNet",
                     "CustomResNetBinary50": "ResNet50", "CustomResNetBinary": "ResNet18",
                     "EfficientNetB0": "EfficientNet"}
-    exp_name_tr = {"copy_copy_copy": "Bl", "copy_copy_clahe": "P1", "copy_clahe_enhance": "P2",
-                   "copy_clahe_tophat5x5":"P2", "expand_flip": "A1", "copy_clahe_enhance_AUGM": "A2",
-                   "copy_clahe_tophat5x5_AUGM": "A2"}
-    
+    model_names = list(model_name_tr.keys())    
+    exp_name_tr = {"copy_copy_copy": "Bl",  "copy_clahe_enhance_AUGM": "A2",
+                   "copy_clahe_tophat5x5_AUGM": "A2", "copy_copy_clahe": "P1", "copy_clahe_enhance": "P2",
+                   "copy_clahe_tophat5x5":"P2", "expand_flip": "A1",}
+    experiment_names = list(exp_name_tr.keys())
     x_method_name_tr = {"contribution": "$M_C^{+}$", "attention": "Att", "grad_cam_cnn": "GC-Bk", 
                         "grad_cam_proj": "GC-Prj", "grad_cam_att": "GC-Att",
                         "eigen_cam_cnn": "EC-Bk", "eigen_cam_proj": "EC-Prj", "eigen_cam_att": "EC-Att",
@@ -145,26 +149,35 @@ def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.7
     else:
         dataset_name = ''
     for f in metrics_files:
-        exp_feats = f.replace("Final_metrics_runs__"+dataset_name+lesion+"_", "").split('_')
-        orig_exp_name = '_'.join(exp_feats[:-1])
-        if orig_exp_name not in exp_name_tr.keys():
-            continue
-        exp = exp_name_tr[orig_exp_name]
-        K = exp_feats[-1].split('.')[0]
-        print(f)
+        # if not f.endswith('.jsonl'):
+        #     continue
+        # print(f)
+
         with open(os.path.join(path_to_metrics, f)) as jfile:
             exp_results = read_jsonl(jfile)
 
+
         for mtype in metrics_type:
             mtype_name = metrics_type[mtype]
-            if exp not in experiments[mtype].keys():
-                experiments[mtype][exp] = dict()
-
 
             for r in exp_results:
-                long_model_name = r["cuantitative_metrics"]["Model-Run"].split('_')[0]
+                long_model_name = r["cuantitative_metrics"]["Model-Run"]
+                model = next((model_name for model_name in model_names if model_name in long_model_name), None)
+                if model==None:
+                    continue
+                exp = next((exp_name for exp_name in experiment_names if exp_name in long_model_name), None)
+                if exp==None:
+                    continue
+                fields = long_model_name.split('.')[0].split('_')
+                K = next((field for field in fields if field.startswith('K')), None)
+                if K==None:
+                    continue
                 seed = r["cuantitative_metrics"]["Seed"]
-                model_name = model_name_tr[long_model_name]
+                model_name = model_name_tr[model]
+                exp = exp_name_tr[exp]
+                if exp not in experiments[mtype].keys():
+                    experiments[mtype][exp] = dict()
+
                 if model_name not in experiments[mtype][exp]:
                     experiments[mtype][exp][model_name] = dict()
                 if seed not in experiments[mtype][exp][model_name]:
@@ -206,9 +219,12 @@ def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.7
     return experiments
 
 def create_xai_perturbation_dict_from_results(path_to_metrics):
-    files = os.listdir(path_to_metrics)
-
-    metrics_files = [f for f in files if f.endswith(".jsonl")]
+    if os.path.isdir(path_to_metrics):
+        files = os.listdir(path_to_metrics)
+        metrics_files = [f for f in files if f.startswith("Final_metrics_runs")]
+    else:
+        path_to_metrics, file = os.path.split(path_to_metrics)
+        metrics_files = [file]
 
     model_name_tr = {"CustomDenseNet": "DenseNet", "CustomMobileNetV3": "MobileNet",
                     "CustomResNetBinary50": "ResNet50", "CustomResNetBinary": "ResNet18",
