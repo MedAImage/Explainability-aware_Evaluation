@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import argparse
 from analysis_utils import create_xai_perturbation_dict_from_results, dict_to_df_XAI_perturbation_metric
+from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_XAI_metric
 
 
 def plot_delta_auc(df, palette, figsize=(18, 4.5)):
@@ -115,9 +116,9 @@ if __name__ == "__main__":
     parser.add_argument('--perturbation_learned_bias', type=str, required=True, help='File containing the perturbation results of models with learned bias')
     parser.add_argument('--perturbation_ignored_bias', type=str, required=True, help='File containing the perturbation results of models ignoring the bias')
     parser.add_argument('--perturbation_zero_bias', type=str, required=True, help='File containing the perturbation results of models with zero bias')
-    # parser.add_argument('--general_learned_bias', type=str, required=True, help='File containing the general results of models with learned bias')
-    # parser.add_argument('--general_ignored_bias', type=str, required=True, help='File containing the general results of models ignoring the bias')
-    # parser.add_argument('--general_zero_bias', type=str, required=True, help='File containing the general results of models with zero bias')
+    parser.add_argument('--general_learned_bias', type=str, required=True, help='File containing the general results of models with learned bias')
+    parser.add_argument('--general_ignored_bias', type=str, required=True, help='File containing the general results of models ignoring the bias')
+    parser.add_argument('--general_zero_bias', type=str, required=True, help='File containing the general results of models with zero bias')
     
     args = parser.parse_args()
 
@@ -125,16 +126,30 @@ if __name__ == "__main__":
     perturbation_ignored_bias = args.perturbation_ignored_bias
     perturbation_zero_bias = args.perturbation_zero_bias
 
+    general_learned_bias = args.general_learned_bias
+    general_ignored_bias = args.general_ignored_bias
+    general_zero_bias = args.general_zero_bias
+
     perturbation_files = {'Learned bias': perturbation_learned_bias, 'Ignored bias': perturbation_ignored_bias,
                           'Zero bias': perturbation_zero_bias}
     perturbation_results = {}
 
     for exp, file in perturbation_files.items():
         experiment_results = create_xai_perturbation_dict_from_results(file)
-        perturbation_results[exp] = dict_to_df_XAI_perturbation_metric(experiment_results).loc[:,:,:,["$M_C^{+}$"]]    
+        perturbation_results[exp] = dict_to_df_XAI_perturbation_metric(experiment_results).loc[:,:,:,["$M_C^{+}$"]]["Delta AUC"]    
 
     df_perturbation_results = pd.concat(perturbation_results, axis=1)
 
-    print(df_perturbation_results)
+    print(df_perturbation_results.groupby(["Model"]).agg("mean"))
 
+    general_files = {'Learned bias': general_learned_bias, 'Ignored bias': general_ignored_bias,
+                          'Zero bias': general_zero_bias}
+    general_results = {}
+
+    for exp, file in general_files.items():
+        experiment_results = create_dictionary_from_results(file)
+        general_results[exp] = dict_to_df_fold_seed_XAI_metric(experiment_results["XAI"]).loc["Bl",:,:,:,["$M_C^{+}$"]][["energy_0.25","energy_0.5","energy_0.75"]]
+
+    df_general_results = pd.concat(general_results, axis=1)
+    print(df_general_results.groupby(["Experiment","Model"]).agg("mean"))
     

@@ -119,7 +119,7 @@ def dict_to_df_XAI_perturbation_metric(d):
     return df
 
 
-def create_dictionary_from_results(path_to_metrics, lesion, energy_threshold=0.75, dataset_name=None):
+def create_dictionary_from_results(path_to_metrics, lesion=None, energy_threshold=0.75, dataset_name=None):
     if os.path.isdir(path_to_metrics):
         files = os.listdir(path_to_metrics)
         metrics_files = [f for f in files if f.startswith("Final_metrics_runs")]
