@@ -143,12 +143,13 @@ def deletion_curve(
     explanation_map,
     percentages=None,
     sigma=40.0,
-    kernel_size=51,
+    kernel_size=101,
     target_fn=None,
-    MoRF = True
+    MoRF = True,
+    blur_type = 'mean'
 ):
     """
-    Computes a MoRF deletion curve using Gaussian blur as perturbation.
+    Computes a MoRF or LeRF deletion curve using mean blur as perturbation.
 
     Parameters
     ----------
@@ -170,7 +171,7 @@ def deletion_curve(
         Standard deviation of the Gaussian kernel.
 
     kernel_size : int
-        Size of the Gaussian kernel. Must be odd.
+        Size of the kernel. Must be odd.
 
     target_fn : callable, optional
         Function that receives the model output and returns the
@@ -208,9 +209,9 @@ def deletion_curve(
     # ------------------------------------------------------------
     # 1. Generate the blurred reference image
     # ------------------------------------------------------------
-    blurred = gaussian_blur(image.unsqueeze(0),
+    blurred = blur_image(image.unsqueeze(0),
                             sigma=sigma,
-                            kernel_size=kernel_size)[0]
+                            kernel_size=kernel_size, blur_type=blur_type)[0]
 
 
     # ------------------------------------------------------------
@@ -287,9 +288,9 @@ def deletion_curve(
     return percentages.detach().cpu(), logits.detach().cpu(), perturbed.detach().cpu(), masks.detach().cpu()
 
 
-def gaussian_blur(image, sigma=40.0, kernel_size=101):
+def blur_image(image, sigma=40.0, kernel_size=101, blur_type = 'mean'):
     """
-    Gaussian blur implemented in PyTorch.
+    blur implemented in PyTorch.
 
     image: [B,C,H,W]
     """
@@ -300,20 +301,23 @@ def gaussian_blur(image, sigma=40.0, kernel_size=101):
     device = image.device
     dtype = image.dtype
 
-    x = torch.arange(
-        kernel_size,
-        device=device,
-        dtype=dtype
-    ) - kernel_size // 2
+    if blur_type=='gaussian':
+        x = torch.arange(
+            kernel_size,
+            device=device,
+            dtype=dtype
+        ) - kernel_size // 2
 
-    kernel_1d = torch.exp(-(x ** 2) / (2 * sigma ** 2))
-    kernel_1d /= kernel_1d.sum()
+        kernel_1d = torch.exp(-(x ** 2) / (2 * sigma ** 2))
+        kernel_1d /= kernel_1d.sum()
 
-    kernel_2d = kernel_1d[:, None] * kernel_1d[None, :]
-
-    # kernel_2d = torch.ones((kernel_size, kernel_size))
-    # kernel_2d /=kernel_2d.sum()
-
+        kernel_2d = kernel_1d[:, None] * kernel_1d[None, :]
+    elif blur_type=='mean':        
+        kernel_2d = torch.ones((kernel_size, kernel_size), device=device)
+        kernel_2d /=kernel_2d.sum()
+    else:
+        raise ValueError("blur_type must be gaussian or mean")
+    
     C = image.shape[1]
 
     kernel = kernel_2d.expand(C, 1, kernel_size, kernel_size)
@@ -486,8 +490,6 @@ def evaluate_faithfulness(testDataset, positive_classes, modelName, bestModelPth
                     # print('----------------------', tmap, '------------------------')
                     percentages_morf, logits_morf, perturbed_images, mask_images = deletion_curve(model, inputs[0], torch.tensor(map_results[tmap]['map'], device=device), MoRF=True)
         
-                    # print(percentages_morf, logits_morf)
-
                     auc_morf = perturbation_auc(logits_morf, percentages_morf)
 
                     percentages_lerf, logits_lerf, _, _ = deletion_curve(model, inputs[0], torch.tensor(map_results[tmap]['map'], device=device), MoRF=False)
