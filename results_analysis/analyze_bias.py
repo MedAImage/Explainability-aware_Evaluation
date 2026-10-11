@@ -91,27 +91,27 @@ if __name__ == "__main__":
 
     axes_top[0] = sns.lineplot(df_diff_ignoreB, x = 'Bias', y="ccc", ax = axes_top[0])
     axes_top[0].set_ylim(-0.3, 0.3)
-    axes_top[0].set_ylabel(r'$\Delta CCC$', fontsize=12)
+    axes_top[0].set_ylabel(r'$\Delta CCC$', fontsize=14)
     axes_top[1] = sns.lineplot(df_diff_ignoreB, x = 'Bias', y="energy_0.75", ax = axes_top[1])
-    axes_top[1].set_ylabel(r'$\Delta f_{\mathcal{R}}$', fontsize=12)
+    axes_top[1].set_ylabel(r'$\Delta f_{\mathcal{R}}$', fontsize=14)
 
     subfigs[0].suptitle(
-        'Bias omission effect (ignored − included)', fontsize=14
+        'Bias omission effect (ignored − included)', fontsize=16
     )
-    subfigs[0].supxlabel('Fixed bias value')
+    subfigs[0].supxlabel('Fixed bias value', fontsize=14)
 
     axes_bottom = subfigs[1].subplots(1, 2)
 
     axes_bottom[0] = sns.lineplot(df_diff_B0, x = 'Bias', y="ccc", ax = axes_bottom[0])
     axes_bottom[0].set_ylim(-0.3, 0.3)
-    axes_bottom[0].set_ylabel(r'$\Delta CCC$', fontsize=12)
+    axes_bottom[0].set_ylabel(r'$\Delta CCC$', fontsize=14)
     axes_bottom[1] = sns.lineplot(df_diff_B0, x = 'Bias', y="energy_0.75", ax = axes_bottom[1])
-    axes_bottom[1].set_ylabel(r'$\Delta f_{\mathcal{R}}$', fontsize=12)
+    axes_bottom[1].set_ylabel(r'$\Delta f_{\mathcal{R}}$', fontsize=14)
 
     subfigs[1].suptitle(
-        'Fixed-bias effect (bias b - bias 0)', fontsize=14
+        'Fixed-bias effect (bias b - bias 0)', fontsize=16
     )
-    subfigs[1].supxlabel('Fixed bias value')
+    subfigs[1].supxlabel('Fixed bias value', fontsize=14)
 
     for ax in list(axes_top)+list(axes_bottom):
         ax.axhline(

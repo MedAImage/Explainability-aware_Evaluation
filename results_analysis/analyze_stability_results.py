@@ -65,6 +65,69 @@ def plot_model_std_heatmap(
 
     ax.set_ylim(len(full.index), -1.0)
 
+def variance_decomposition(df):
+
+    group_levels = ['version', 'Experiment', 'Model']
+
+    # Total variance across folds and seeds
+    var_total = df.groupby(level=group_levels).var(ddof=0)
+
+    # Mean across seeds for each fold
+    fold_means = df.groupby(
+        level=group_levels + ['Fold']
+    ).mean()
+
+    # Between-fold variance
+    var_between = fold_means.groupby(
+        level=group_levels
+    ).var(ddof=0)
+
+    # Within-fold variance (across seeds)
+    fold_vars = df.groupby(
+        level=group_levels + ['Fold']
+    ).var(ddof=0)
+
+    var_within = fold_vars.groupby(
+        level=group_levels
+    ).mean()
+
+    # Proportion of total variance
+    pct_between = 100 * var_between.div(var_total)
+    pct_within = 100 * var_within.div(var_total)
+
+    return {
+        'total': var_total,
+        'between': var_between,
+        'within': var_within,
+        'pct_between': pct_between,
+        'pct_within': pct_within
+    }    
+
+def create_variance_component_df(df_variance_all, metrics, data_config, backbones, lesion):
+    index = pd.MultiIndex.from_product([[lesion], backbones, data_config], names=["Lesion", "Backbone", "Data configuration"])
+
+    columns = []
+
+    for m in metrics:
+        columns.append((m, "Standard", r"$V_{total}$"))
+        columns.append((m, "Standard", r"$V_{within} \%$"))
+        columns.append((m, "Explainability-aware", r"$V_{total}$"))
+        columns.append((m, "Explainability-aware", r"$V_{within} \%$"))
+
+    columns = pd.MultiIndex.from_tuples(columns)
+
+    evaluations = {"std": "Standard", "exp": "Explainability-aware"}
+
+    df_variance_summary = pd.DataFrame(index=index, columns=columns, dtype=float)
+    for b in backbones:
+        for dc in data_config:
+            for m in metrics:
+                for e, name_e in evaluations.items():
+                    df_variance_summary.loc[(lesion, b, dc), (m, name_e, r"$V_{total}$")] = df_variance_all["total"].loc[e,dc,b][m].round(4)
+                    df_variance_summary.loc[(lesion, b, dc), (m, name_e, r"$V_{within} \%$")] = df_variance_all["pct_within"].loc[e,dc,b][m].round(2)
+
+    return df_variance_summary
+
 
 if __name__ == "__main__":
 
@@ -76,6 +139,8 @@ if __name__ == "__main__":
     df_exp = dict_to_df_fold_seed_metric(experiment_results["explain"])
 
     df_all = pd.concat([df_std, df_exp], keys=['std','exp'], names=["version"])
+
+    print(df_all)
 
     df_std_metrics = df_all.groupby(["version","Experiment","Model"]).agg("std")
 
@@ -135,7 +200,21 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.savefig("fold_seed_distribution_all"+"_"+metric+"_"+sys.argv[2]+".png")        
         plt.show()
-    
 
+    variance_results = variance_decomposition(df_all)
+    print(variance_results['pct_between'])
+    print(variance_results['pct_within'])
 
+    lesion_name = "Mass" if lesion=="Nodulo" else "Microcalcificaciones"
+    variance_summary = create_variance_component_df(variance_results, metrics=["F1-score", "AUC"], data_config=["Bl", "P1", "P2", "A1", "A2"], 
+                                                    backbones=["DenseNet", "ResNet50"], lesion=lesion_name)
+    # print(variance_summary)
+    formatters = { col: "{:.4f}".format if col[-1] == r"$V_{total}$" else "{:.2f}".format
+                for col in variance_summary.columns}
+
+    print(variance_summary.to_latex(formatters=formatters,
+                escape=False,
+                multicolumn=True,
+                multirow=True
+            ))
 
