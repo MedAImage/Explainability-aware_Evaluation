@@ -113,6 +113,9 @@ def get_gradCam_map(cam_model, target_layers, inputs):
             with cam_ctx as cam:
                 grayscale_cam = cam(input_tensor=inputs, targets=[BinaryClassifierOutputTarget(1)])[0]
                 gradcam_maps.append(grayscale_cam)
+                
+                cam.activations_and_grads.activations = []
+                cam.activations_and_grads.gradients = []
 
     return gradcam_maps
 
@@ -125,6 +128,9 @@ def get_eigenCam_map(cam_model, target_layers, inputs):
                 grayscale_cam = cam(input_tensor=inputs, targets=[BinaryClassifierOutputTarget(1)])[0]
                 eigencam_maps.append(grayscale_cam)
 
+                cam.activations_and_grads.activations = []
+                cam.activations_and_grads.gradients = []                
+
     return eigencam_maps
 
 def get_shapleyCam_map(cam_model, target_layers, inputs):
@@ -135,6 +141,9 @@ def get_shapleyCam_map(cam_model, target_layers, inputs):
             with cam_ctx as cam:
                 grayscale_cam = cam(input_tensor=inputs, targets=[BinaryClassifierOutputTarget(1)])[0]
                 shapleycam_maps.append(grayscale_cam)
+                
+                cam.activations_and_grads.activations = []
+                cam.activations_and_grads.gradients = []
 
     return shapleycam_maps
 
