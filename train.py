@@ -3,8 +3,7 @@ import torch.nn as nn
 from torch.utils.data import  DataLoader
 from models.models import  EfficientNetB0, CustomResNetBinary,  CustomResNetBinary50,  CustomDenseNet, CustomMobileNetV3
 import numpy as np
-from dataset_load.dataset import lesionDataset, data_augmentation_transform, normal_transform, collate_pad_to32
-from get_model_metrics import calculate_metrics
+from dataset_load.dataset import lesionDataset, data_augmentation_transform, collate_pad_to32
 import os
 import argparse
 import yaml
@@ -65,13 +64,6 @@ def validation (epoch = 0):
             val_predictions.append(predicted_class.cpu().numpy())
         avgValLoss = val_loss / len(val_data_loader.dataset)
         return avgValLoss, val_labels, val_predictions
-
-###METHOD FOR METRICS###
-def metrics(labels, predictions):
-    acc, precision, recall, f1, auc_roc = calculate_metrics(labels, predictions, threshold=probability_threshold)
-    print(f"Precision:{precision:.4f} || Recall:{recall:.4f} || F1 Score:{f1:.4f} || AUC-ROC:{auc_roc:.4f} || Accuracy:{acc:.4f}")
-
-    return acc, precision, recall, f1, auc_roc 
 
 
 if __name__=="__main__":
@@ -150,10 +142,9 @@ if __name__=="__main__":
     print(f"[DEBUG] train.py | ValDatasetJson: {ValDatasetJson}")
 
     data_augmentation = data_augmentation_transform()
-    normal_data = normal_transform()
 
     train_dataset = lesionDataset(dataPath = TrainDatasetJson, positive_classes = positive_classes, transform_with_class=data_augmentation, seed = args.seed,transforms_config=transformsConfig ,dataroot=args.dataroot, withLTimeAugmentation=True)
-    val_dataset = lesionDataset(dataPath = ValDatasetJson, positive_classes = positive_classes, transform_with_class = normal_data, seed = args.seed, transforms_config=transformsConfig ,dataroot=args.dataroot)
+    val_dataset = lesionDataset(dataPath = ValDatasetJson, positive_classes = positive_classes, seed = args.seed, transforms_config=transformsConfig ,dataroot=args.dataroot)
 
     train_data_loader = DataLoader(train_dataset, batch_size=batchSamples, shuffle=True, num_workers=4, collate_fn = collate_pad_to32)
     val_data_loader = DataLoader(val_dataset, batch_size=batchSamples, shuffle=False, num_workers=4, collate_fn = collate_pad_to32)
