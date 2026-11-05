@@ -76,7 +76,7 @@ if __name__=="__main__":
     parser.add_argument("--seed_split", type=int, default=76014, help="Seed split for saving the model")
     parser.add_argument("--number_of_epochs", type=int, default=100, help="Number of epochs to train the model")
     parser.add_argument("--patience", type=int, default=5, help="Number of epochs to wait for improvement")
-    parser.add_argument("--batch_size", type=int, default=2, help="Batch size for training")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
     parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate for the optimizer")
     parser.add_argument("--model", type=str, default="CustomResNetBinary", help="Selection of the model to train")
     parser.add_argument("--dataroot", type=str, default=".", help="Root path to the dataset")
