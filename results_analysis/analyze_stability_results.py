@@ -1,11 +1,8 @@
-import json
-import sys
-import re
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_metric
+import argparse
 
 def plot_model_std_heatmap(
     df,
@@ -131,8 +128,21 @@ def create_variance_component_df(df_variance_all, metrics, data_config, backbone
 
 if __name__ == "__main__":
 
-    path_to_metrics = sys.argv[1]
-    lesion=sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--metrics_path", type=str, required=True,
+                    help="Path to the files containing the main results")
+    parser.add_argument("--positive_class", type=str, required=True,
+                            help="Lesion name")
+    parser.add_argument("--file_suffix", type=str, required=True,
+                            help="Suffix for PNG files")
+    
+    
+
+    args = parser.parse_args()
+
+
+    path_to_metrics = args.metrics_path
+    lesion=args.positive_class
 
     experiment_results = create_dictionary_from_results(path_to_metrics, lesion, 0.75)
     df_std = dict_to_df_fold_seed_metric(experiment_results["standard"])
@@ -175,7 +185,7 @@ if __name__ == "__main__":
 
 
     plt.tight_layout(rect=[0, 0, 0.88, 1])
-    plt.savefig("std_heatmaps_"+sys.argv[2]+".png")        
+    plt.savefig("std_heatmaps_"+args.file_suffix+".png")        
     plt.show()
 
 
@@ -198,23 +208,22 @@ if __name__ == "__main__":
             ax.tick_params(axis='both', labelsize=12)
 
         plt.tight_layout()
-        plt.savefig("fold_seed_distribution_all"+"_"+metric+"_"+sys.argv[2]+".png")        
+        plt.savefig("fold_seed_distribution_all"+"_"+metric+"_"+args.file_suffix+".png")        
         plt.show()
 
     variance_results = variance_decomposition(df_all)
-    print(variance_results['pct_between'])
-    print(variance_results['pct_within'])
 
     lesion_name = "Mass" if lesion=="Nodulo" else "Microcalcificaciones"
     variance_summary = create_variance_component_df(variance_results, metrics=["F1-score", "AUC"], data_config=["Bl", "P1", "P2", "A1", "A2"], 
                                                     backbones=["DenseNet", "ResNet50"], lesion=lesion_name)
-    # print(variance_summary)
+    print('Variance-component analysis')
+    print(variance_summary)
     formatters = { col: "{:.4f}".format if col[-1] == r"$V_{total}$" else "{:.2f}".format
                 for col in variance_summary.columns}
 
-    print(variance_summary.to_latex(formatters=formatters,
-                escape=False,
-                multicolumn=True,
-                multirow=True
-            ))
+    # print(variance_summary.to_latex(formatters=formatters,
+    #             escape=False,
+    #             multicolumn=True,
+    #             multirow=True
+    #         ))
 

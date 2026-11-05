@@ -1,5 +1,3 @@
-import json
-import sys
 import re
 import numpy as np
 import pandas as pd
@@ -8,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_metric
 from scipy.stats import spearmanr, variation
+import argparse
 
 def _darken(color, factor=0.65):
     rgb = np.array(mcolors.to_rgb(color))
@@ -221,8 +220,21 @@ def compute_df_correlations(df_std, df_exp, metrics, backbones, lesion):
 
 if __name__ == "__main__":
 
-    path_to_metrics = sys.argv[1]
-    lesion=sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--metrics_path", type=str, required=True,
+                    help="Path to the files containing the main results")
+    parser.add_argument("--positive_class", type=str, required=True,
+                            help="Lesion name")
+    parser.add_argument("--file_suffix", type=str, required=True,
+                            help="Suffix for PNG files")
+    
+    
+
+    args = parser.parse_args()
+
+
+    path_to_metrics = args.metrics_path
+    lesion=args.positive_class
 
     experiment_results = create_dictionary_from_results(path_to_metrics, lesion, 0.75)
     df_std = dict_to_df_fold_seed_metric(experiment_results["standard"])
@@ -334,7 +346,7 @@ if __name__ == "__main__":
     )
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plt.savefig("performance_metrics_"+sys.argv[2]+".png")
+    plt.savefig("performance_metrics_"+args.file_suffix+".png")
     plt.show()
 
 
@@ -382,6 +394,6 @@ if __name__ == "__main__":
 
 
     plt.tight_layout(rect=[0, 0, 0.88, 1])
-    plt.savefig("metrics_penalization_"+sys.argv[2]+".png")    
+    plt.savefig("metrics_penalization_"+args.file_suffix+".png")    
     plt.show()
 

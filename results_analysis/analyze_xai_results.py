@@ -1,15 +1,18 @@
-import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_XAI_metric
+import argparse
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--metrics_path", type=str, required=True,
+                    help="Path to the files containing the main XAI results")
+    args = parser.parse_args()
 
-    path_to_metrics = sys.argv[1]
-    lesion=sys.argv[2]
+    path_to_metrics = args.metrics_path
 
-    experiment_results = create_dictionary_from_results(path_to_metrics, lesion)
+    experiment_results = create_dictionary_from_results(path_to_metrics)
     df_xai = dict_to_df_fold_seed_XAI_metric(experiment_results["XAI"])
 
     df_xai_baseline = df_xai.loc(axis=0)['Bl']

@@ -1,30 +1,13 @@
-import json
-import sys
 import os
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
+from analysis_utils import read_jsonl
 import copy
-
-def read_jsonl(file):
-    json_obj = []
-    buffer = ""
-    for l in file:
-        if l=="}{\n":
-            l = "}\n"
-        buffer += l
-        try:
-            obj = json.loads(buffer)
-            json_obj.append(obj)
-            buffer = "{\n"
-        except json.JSONDecodeError:
-            pass
-    return json_obj
+import argparse
 
 
-def create_dictionary_from_results(path_to_metrics):
+def create_dictionary_from_roi_perturbation_results(path_to_metrics):
     files = os.listdir(path_to_metrics)
 
     metrics_files = [f for f in files if f.endswith(".jsonl")]
@@ -452,9 +435,16 @@ def plot_roi_perturbation(
 
 if __name__ == "__main__":
 
-    path_to_metrics = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--roi_perturbation_results_path", type=str, required=True,
+                    help="Path to the files containing the ROI perturbation results")
     
-    experiment_results = create_dictionary_from_results(path_to_metrics)
+
+    args = parser.parse_args()
+
+    path_to_metrics = args.roi_perturbation_results_path
+    
+    experiment_results = create_dictionary_from_roi_perturbation_results(path_to_metrics)
     df_size = dict_to_df_perturbation_ROI(experiment_results['size perturbation'])
     df_position = dict_to_df_perturbation_ROI(experiment_results['position perturbation'])
 

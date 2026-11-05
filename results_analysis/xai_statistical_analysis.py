@@ -1,17 +1,24 @@
-import sys
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_XAI_metric
 from analysis_utils import create_xai_perturbation_dict_from_results, dict_to_df_XAI_perturbation_metric
 from statistical_utils import paired_statistical_analysis
 import pandas as pd
+import argparse
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--xai_main_results_path", type=str, required=True,
+                    help="Path to the files containing the main XAI results")
+    parser.add_argument("--xai_perturbation_results_path", type=str, required=True,
+                    help="Path to the files containing the XAI perturbation-based results")
+    
+    args = parser.parse_args()
 
-    path_to_general_xai_metrics = sys.argv[1]
-    path_to_perturbation_xai_metrics = sys.argv[2]
-    lesion=sys.argv[3]
 
-    general_experiment_results = create_dictionary_from_results(path_to_general_xai_metrics, lesion)
+    path_to_general_xai_metrics = args.xai_main_results_path
+    path_to_perturbation_xai_metrics = args.xai_perturbation_results_path
+
+    general_experiment_results = create_dictionary_from_results(path_to_general_xai_metrics)
     df_xai = dict_to_df_fold_seed_XAI_metric(general_experiment_results["XAI"])
 
     df_xai = df_xai.loc(axis=0)['Bl']
@@ -49,6 +56,6 @@ if __name__ == "__main__":
     stats_all_metrics = stats_all_metrics.set_index(["Metric", "Comparison"]).round(3)
     print(stats_all_metrics)
 
-    latex_table = stats_all_metrics.to_latex(float_format = "%.4f", escape=False)
-    print(latex_table) 
+    # latex_table = stats_all_metrics.to_latex(float_format = "%.4f", escape=False)
+    # print(latex_table) 
 

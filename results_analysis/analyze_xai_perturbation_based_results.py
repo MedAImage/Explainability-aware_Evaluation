@@ -1,10 +1,7 @@
-import json
-import sys
-import os
-import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from analysis_utils import create_xai_perturbation_dict_from_results, dict_to_df_XAI_perturbation_metric
+import argparse
 
 
 def plot_delta_auc(df, palette, figsize=(18, 4.5)):
@@ -44,12 +41,6 @@ def plot_delta_auc(df, palette, figsize=(18, 4.5)):
                 ax.get_legend_handles_labels()
             )
 
-        # if ax.get_legend() is not None:
-        #     ax.get_legend().remove()
-
-        # ax.set_xlabel("")
-        # ax.set_xticklabels([])        
-
 
         sns.stripplot(
             data=subset,
@@ -88,11 +79,6 @@ def plot_delta_auc(df, palette, figsize=(18, 4.5)):
             ax.set_ylabel("")
 
 
-        # ax.tick_params(
-        #     axis="x",
-        #     rotation=45,
-        # )
-
     fig.suptitle(
         "Perturbation-based evaluation of explanation maps", fontsize=18
     )
@@ -113,7 +99,14 @@ def plot_delta_auc(df, palette, figsize=(18, 4.5)):
 
 if __name__ == "__main__":
 
-    path_to_metrics = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--xai_perturbation_results_path", type=str, required=True,
+                    help="Path to the files containing the XAI perturbation-based results")
+    
+
+    args = parser.parse_args()
+
+    path_to_metrics = args.xai_perturbation_results_path
     
     experiment_results = create_xai_perturbation_dict_from_results(path_to_metrics)
     df_xai = dict_to_df_XAI_perturbation_metric(experiment_results)    

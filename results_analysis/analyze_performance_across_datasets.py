@@ -466,11 +466,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--metrics_path_all", type=str, required=True,
-                    help="Path to the metrics file using the entire dataset")
+                    help="Path to the metrics' files using the entire dataset")
     parser.add_argument("--metrics_path_vindr", type=str, required=True,
-                        help="Path to the metrics file using VinDr only")
+                        help="Path to the metrics' files using VinDr only")
     parser.add_argument("--metrics_path_inbreast", type=str, required=True,
-                        help="Path to the metrics file using INbreast only")
+                        help="Path to the metrics' files using INbreast only")
     parser.add_argument("--positive_class", type=str, required=True,
                             help="Lesion name")
     parser.add_argument("--metrics", type=str, nargs='+', required=True,

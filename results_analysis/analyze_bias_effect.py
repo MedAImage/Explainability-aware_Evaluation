@@ -1,14 +1,12 @@
-import json
 import sys
 import os
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
+import argparse
 from analysis_utils import read_jsonl
 
-def create_dictionary_from_dir_results(dir_metrics):
+def create_dictionary_from_dir_bias_results(dir_metrics):
 
     experiments = dict()
     contrib = {"contribution": "use_bias", "contrib_no_bias": "ignore_bias"}
@@ -68,9 +66,16 @@ def bias_dict_to_df(d):
 
 if __name__ == "__main__":
 
-    dir_metrics = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--bias_results_path", type=str, required=True,
+                    help="Path to the files containing the bias results")
+    
 
-    experiment_results = create_dictionary_from_dir_results(dir_metrics)
+    args = parser.parse_args()
+
+    dir_metrics = args.bias_results_path
+
+    experiment_results = create_dictionary_from_dir_bias_results(dir_metrics)
 
     df_results = bias_dict_to_df(experiment_results)
 
