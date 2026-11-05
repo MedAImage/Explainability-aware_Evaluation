@@ -73,7 +73,7 @@ if __name__=="__main__":
     parser.add_argument('--trainset', type=str, required=True, help='Training set')
     parser.add_argument('--valset', type=str, required=True, help='Validation set')
     parser.add_argument("--seed", type=int, default=51, help="Seed torch for training")
-    parser.add_argument("--seed_split", type=str, default=None, help="Seed split for saving the model")
+    parser.add_argument("--seed_split", type=int, default=76014, help="Seed split for saving the model")
     parser.add_argument("--number_of_epochs", type=int, default=100, help="Number of epochs to train the model")
     parser.add_argument("--patience", type=int, default=5, help="Number of epochs to wait for improvement")
     parser.add_argument("--batch_size", type=int, default=2, help="Batch size for training")
