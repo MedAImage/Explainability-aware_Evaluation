@@ -126,7 +126,7 @@ if __name__=="__main__":
     model = model_architectures[args.model]()
 
     positive_classes_str = '__'.join(args.positive_classes)
-    save_completeBestModel_path = os.path.join(args.model_save_path, args.seed_split, positive_classes_str)
+    save_completeBestModel_path = os.path.join(args.model_save_path, str(args.seed_split), positive_classes_str)
     os.makedirs(save_completeBestModel_path, exist_ok=True)
     print(save_completeBestModel_path)
 
