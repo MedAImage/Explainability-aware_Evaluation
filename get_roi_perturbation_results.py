@@ -129,12 +129,12 @@ def get_roi_perturbation_results(testDataset, positive_classes, modelName, bestM
     for th in LContrib_Th:
         energy[th] = []
 
-    size_alpha_values = [-0.4, -0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.4]        
+    size_alpha_values = [-0.4, -0.3, -0.2, -0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4]        
     size_perturbation = {}
     for s_alpha in size_alpha_values:
         size_perturbation[s_alpha] = copy.deepcopy(energy)
 
-    position_alpha_values = [0, 0.05, 0.1, 0.15, 0.2, 0.4]        
+    position_alpha_values = [0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4]        
     position_perturbation = {}
     for p_alpha in position_alpha_values:
         position_perturbation[p_alpha] = copy.deepcopy(energy)

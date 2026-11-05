@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.gridspec import GridSpec
-from scipy.stats import spearmanr, kendalltau
+from scipy.stats import spearmanr
 import argparse
 from analysis_utils import create_dictionary_from_results, dict_to_df_fold_seed_metric
 
@@ -439,26 +439,17 @@ def dataset_configuration_correlations(
                 y
             )
 
-            kendall_v, kendall_p = kendalltau(
-                x,
-                y
-            )
-
-            if spearman_p>=0.001 or kendall_p>=0.001:
+            if spearman_p>=0.001:
                 print(f'No significant correlation in {evaluation}-{metric}')
 
             corr_results.append({
                 "Evaluation": evaluation,
                 "Spearman": spearman_r,
-                "Spearman p-value": spearman_p,
-                "Kendall": kendall_v,
-                "Kendall p-value": kendall_p
-
+                "Spearman p-value": spearman_p
             })
 
         metric_results = {"Lesion": lesion, "Metric": metric}
         metric_results |= {"Spearman_"+r["Evaluation"]: r["Spearman"] for r in corr_results}
-        metric_results |= {"Kendall_"+r["Evaluation"]: r["Kendall"] for r in corr_results}
 
         results.append(metric_results)        
 
