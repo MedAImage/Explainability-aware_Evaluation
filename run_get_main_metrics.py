@@ -50,7 +50,7 @@ for modelfile in models:
     model_weights_path = os.path.join(models_path, modelfile)
 
     cmd = [
-            "python3", "get_model_metrics.py",
+            "python3", "get_main_metrics.py",
             "--testset", testset,
             "--seed", seed, ###
             "--model", model_name, ###

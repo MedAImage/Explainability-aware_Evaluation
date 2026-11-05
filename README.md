@@ -199,7 +199,7 @@ The script trains a total of 625 models per lesion type, varying the backbone, t
 
 ## Evaluation
 
-Once a model is trained, it can be evaluated using *get_model_metrics.py*. This script generates a report in JSON format containing different metrics: standard evaluation metrics (precision, recall, F1-score, ...), explainability-aware versions of those metrics, as well as metrics used to assess the fidelity and quality of the generated contribution maps.
+Once a model is trained, it can be evaluated using *get_main_metrics.py*. This script generates a report in JSON format containing different metrics: standard evaluation metrics (precision, recall, F1-score, ...), explainability-aware versions of those metrics, as well as metrics used to assess the fidelity and quality of the generated contribution maps.
 
 To run the script, you must specify the following arguments:
 
@@ -222,7 +222,7 @@ To visualize the maps, it is necessary to add the *--show_maps* option to the li
 
 ### Evaluation of all trained models
 
-As with training, all models trained in our experiments for each type of lesion can be evaluated using a single script. Specifically, you can use *run_testmodel.py* with the following arguments: 
+As with training, all models trained in our experiments for each type of lesion can be evaluated using a single script. Specifically, you can use *run_get_main_metrics.py* with the following arguments: 
 
 * --models_path: path to the directory containing all the trained models.
 * --positive_classes: name of the lesion acting as the positive class.

@@ -3,13 +3,13 @@ import torch
 from torch.utils.data import DataLoader
 import cv2
 import numpy as np
-from dataset_load.dataset import lesionDataset, normal_transform
+from dataset_load.dataset import lesionDataset, collate_test
 from models.models import  EfficientNetB0, CustomResNetBinary, CustomResNetBinary50, CustomDenseNet, CustomMobileNetV3
+from metrics import get_roi_energy_fraction, get_ground_truth_mask, normalize_map
 import argparse
 import json
 import yaml
 import copy
-import math
 from tqdm import tqdm
 
 def perturbe_rois_in_size(rois, size_alpha_values):
@@ -32,20 +32,6 @@ def perturbe_rois_in_position(rois, position_alpha_values,
 
     new_rois = {}
 
-    # Unit vectors for 8 equally spaced directions.
-    # All of them have Euclidean norm = 1.
-    sqrt2 = math.sqrt(2)
-
-    # directions = [
-    #     (-1, 0),                         # left
-    #     (-1/sqrt2, -1/sqrt2),           # upper-left
-    #     (0, -1),                         # up
-    #     (1/sqrt2, -1/sqrt2),            # upper-right
-    #     (1, 0),                          # right
-    #     (1/sqrt2, 1/sqrt2),             # lower-right
-    #     (0, 1),                          # down
-    #     (-1/sqrt2, 1/sqrt2),            # lower-left
-    # ]
 
     directions = [
         (-1, 0),                         # left
@@ -69,24 +55,17 @@ def perturbe_rois_in_position(rois, position_alpha_values,
 
             x1, y1, w, h = r[0], r[1], r[2], r[3]
 
-            # roi_length = math.sqrt(w * h)
-
-            # displacement = alpha * roi_length
             displacement_x = alpha*w
             displacement_y = alpha*h
 
             for i_direction, (ux, uy) in enumerate(directions):
 
-                # dx = displacement * ux
-                # dy = displacement * uy
                 dx = displacement_x * ux
                 dy = displacement_y * uy
 
                 new_x1 = x1 + dx
                 new_y1 = y1 + dy
 
-                # Keep the whole ROI inside the image while
-                # preserving its original width and height
                 new_x1 = max(0, min(new_x1, image_width - w))
                 new_y1 = max(0, min(new_y1, image_height - h))
 
@@ -99,44 +78,8 @@ def perturbe_rois_in_position(rois, position_alpha_values,
 
     return new_rois
 
-def get_ground_truth_mask(orig_size, map_size, rois):
-    H_orig, W_orig = orig_size[0], orig_size[1]
-    H_map, W_map = map_size[0], map_size[1]
-    ground_truth_mask = np.zeros((map_size[0], map_size[1]), dtype=np.uint8)
 
-    H_scale, W_scale = H_map/H_orig, W_map/W_orig
-    for r in rois:
-        w, h = max(int(r[2]*W_scale+1), 1), max(int(r[3]*H_scale+1), 1)
-        x, y = max(0, int(r[0]*W_scale)), max(0, int(r[1]*H_scale))
-        x2, y2 = min(x+w, map_size[1]), min(y+h, map_size[0]) 
-        ground_truth_mask[y:y2, x:x2] = 1
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9,9))
-    ground_truth_mask = cv2.dilate(ground_truth_mask, kernel)
-
-    return ground_truth_mask
-
-def get_roi_energy_fraction(map, ground_truth_mask, th_zero = 0.5):
-    norm_map = np.copy(map)
-    norm_map[norm_map<th_zero] = 0
-
-    rois_energy = np.sum(norm_map[ground_truth_mask==1])
-
-    total_energy = np.sum(norm_map)
-    fR = rois_energy/(total_energy+np.finfo(np.float32).eps)
-
-    return fR
-
-def normalize_map(map):
-    map_norm = (map-np.min(map))
-    diff_max_min = (np.max(map)-np.min(map))
-    if diff_max_min>0:
-        map_norm = map_norm/diff_max_min
-    grayscale_map = (map_norm*255).astype(np.uint8)
-
-    return map_norm, grayscale_map
-
-def get_roi_perturbation_results(testDataset, positive_classes, loadedseed, modelName, bestModelPth, dataroot='.', transformsConfig=None, save_completeMetrics_path=None, json_suffix=None, show_image = False, compare_cam = False, limit = 10000):
+def get_roi_perturbation_results(testDataset, positive_classes, modelName, bestModelPth, dataroot='.', transformsConfig=None, limit = 10000):
 
     print(f"Best model path: {bestModelPth}")
     bestmodel = bestModelPth.split("/")[-1]
@@ -163,9 +106,7 @@ def get_roi_perturbation_results(testDataset, positive_classes, loadedseed, mode
     model = model.to(device) 
 
     
-    normal_data = normal_transform()
-
-    DatasetLesion = lesionDataset(dataPath = testDataset ,positive_classes = positive_classes, transform_with_class = normal_data, transforms_config=transformsConfig, dataroot=dataroot, limit=limit)
+    DatasetLesion = lesionDataset(dataPath = testDataset ,positive_classes = positive_classes, transforms_config=transformsConfig, dataroot=dataroot, limit=limit)
 
     test_dataset = DatasetLesion
     print(f"Test Dataset Size: {len(test_dataset)}")
@@ -210,7 +151,7 @@ def get_roi_perturbation_results(testDataset, positive_classes, loadedseed, mode
 
             _, _, contrib_map = model(inputs)
 
-            for img, batch_rois in zip(inputs.tolist(), rois ,labels.tolist()):
+            for img, batch_rois in zip(inputs.tolist(), rois):
 
                 cvimg = torch.permute(torch.tensor(img), (1, 2, 0)).cpu().numpy()
                 cvimg = (cvimg*255).astype(np.uint8)
@@ -273,37 +214,6 @@ def get_roi_perturbation_results(testDataset, positive_classes, loadedseed, mode
             
     return roi_perturbation_results
 
-def collate_test(batch):
-    """
-    batch: list of (img, label)
-      - img should be [3,H,W], variable H,W
-    """
-    imgs, image_rois, img_types, labels, img_names = zip(*batch)
-    B = len(imgs)
-
-    proc_imgs = []
-    sizes = []
-    for x in imgs:
-        assert x.dim() == 3, "img must be [C,H,W]"
-        C, H, W = x.shape
-        sizes.append((H, W))
-        proc_imgs.append(x)
-        H_pad, W_pad = H, W
-
-
-
-    batch_imgs = torch.zeros(B, 3, H_pad, W_pad, dtype=proc_imgs[0].dtype)
-
-    for i, x in enumerate(proc_imgs):
-        _, H, W = x.shape
-        batch_imgs[i, :, :H, :W] = x
-
-    labels = torch.stack(labels).view(B, 1)
-    img_types = torch.stack(img_types).view(B, 4)
-
-    return batch_imgs, list(image_rois) ,img_types, labels, list(img_names)
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="MedImage binary classification test")
@@ -316,8 +226,6 @@ if __name__ == "__main__":
     parser.add_argument("--metrics_run_path", type=str, help="Path to the metrics run folder")
     parser.add_argument("--json_suffix", type=str, default=None, help="Suffix to append to metrics jsonl filename")
     parser.add_argument("--augmentation_config_path", type=str, default="augment_transform.yaml", help="Path to the augmentation config file")
-    parser.add_argument("--show_maps", action='store_true', help="Show images")
-    parser.add_argument("--compare_cam", action='store_true', help="Compare with CAM methods")
     
     args = parser.parse_args()
     json_suffix = args.json_suffix
@@ -326,10 +234,8 @@ if __name__ == "__main__":
         config = yaml.safe_load(file) or {}
     transformsConfig = config
 
-    roi_perturbation_results = get_roi_perturbation_results(args.testset, args.positive_classes, args.seed, args.model , args.model_weights_path, 
-                                                            dataroot=args.dataroot, transformsConfig=transformsConfig,
-                                                            save_completeMetrics_path=args.metrics_run_path, json_suffix=args.json_suffix, 
-                                                            show_image = args.show_maps, compare_cam = args.compare_cam, limit = 10000)
+    roi_perturbation_results = get_roi_perturbation_results(args.testset, args.positive_classes, args.model , args.model_weights_path, 
+                                                            dataroot=args.dataroot, transformsConfig=transformsConfig, limit = 100000)
 
     final_metrics = { "Seed": args.seed,
                       "Architecture": args.model,
@@ -338,6 +244,6 @@ if __name__ == "__main__":
                       "ROI Perturbation": roi_perturbation_results
                     }
 
-    json_name = "Final_metrics_runs_ROI_perturbation.jsonl" if not json_suffix else f"Final_metrics_runs_ROI_perturbation_{json_suffix}.jsonl"
+    json_name = "Final_ROI_perturbation_results.jsonl" if not json_suffix else f"Final_ROI_perturbation_{json_suffix}.jsonl"
     with open(json_name, "a") as f:
         json.dump(final_metrics, f, indent=4)

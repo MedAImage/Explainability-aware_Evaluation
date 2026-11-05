@@ -18,24 +18,11 @@ from typing import List, Tuple
 import copy
 
 
-################# TRANSFORM METHODS #################
-
-
-#METHOD FOR RETURNING THE TRANSFORM DATA AGUMENTATION
 def data_augmentation_transform():
     return transforms.Compose([
     transforms.ColorJitter(brightness=(0.8, 1.2), contrast = (0.8, 1.5)),
     transforms.RandomRotation(degrees = 10),
 ])
-
-
-
-#METHOD FOR RETURNING THE TRANSFORM NORMAL DATA
-def normal_transform():
-    return transforms.Compose([
-    transforms.RandomRotation(degrees = 0),        
-])
-
 
 ################## LESION DATASET ################## 
 class lesionDataset(Dataset):
@@ -238,22 +225,14 @@ def round_up(x: int, base: int) -> int:
     return int(math.ceil(x / base)) * base
 
 def make_pad_to_multiple(sizes: List[Tuple[int,int]], multiple: int = 32) -> Tuple[int,int]:
-    """
-    Given a list of (H, W) for the batch, return padded (H_pad, W_pad),
-    each rounded up to the given multiple (32 for ResNet50).
-    """
     H_max = max(h for h, w in sizes)
     W_max = max(w for h, w in sizes)
     return round_up(H_max, multiple), round_up(W_max, multiple)
 
 
-# --------- Collate: pad to (H_pad, W_pad) and build masks ---------
-
+# Training collate: pad variable-sized images to create batches.
+# Round up to multiples of 32 so even the largest images may receive padding, for greater consistency across the dataset.
 def collate_pad_to32(batch):
-    """
-    batch: list of (img, label)
-      - img should be [3,H,W], variable H,W
-    """
     imgs, image_rois, img_types, labels, img_names = zip(*batch)
     B = len(imgs)
 
@@ -277,5 +256,16 @@ def collate_pad_to32(batch):
 
     return batch_imgs, list(image_rois) ,img_types, labels, list(img_names)
 
+# Test collate: no padding is applied; all images in a batch must have the same size.
+# Avoids artificial regions affecting spatial explanations.
+def collate_test(batch):
+    imgs, image_rois, img_types, labels, img_names = zip(*batch)
+    B = len(imgs)
 
+    batch_imgs = torch.stack(imgs)
+
+    labels = torch.stack(labels).view(B, 1)
+    img_types = torch.stack(img_types).view(B, 4)
+
+    return batch_imgs, list(image_rois) ,img_types, labels, list(img_names)
 

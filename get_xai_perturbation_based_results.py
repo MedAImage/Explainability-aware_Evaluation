@@ -17,7 +17,7 @@ from pytorch_grad_cam.utils.model_targets import BinaryClassifierOutputTarget
 
 from models.models import  EfficientNetB0, CustomResNetBinary, CustomResNetBinary50, CustomDenseNet, CustomMobileNetV3
 
-from dataset_load.dataset import lesionDataset, normal_transform
+from dataset_load.dataset import lesionDataset, collate_test
 
 class CamWrapperAdapter(nn.Module):
     def __init__(self, model: nn.Module):
@@ -428,9 +428,7 @@ def evaluate_faithfulness(testDataset, positive_classes, modelName, bestModelPth
 
     cam_model = CamWrapperAdapter(model).to(device)
 
-    normal_data = normal_transform()
-
-    DatasetLesion = lesionDataset(dataPath = testDataset ,positive_classes = positive_classes, transform_with_class = normal_data, transforms_config=transformsConfig, dataroot=dataroot, limit=limit)
+    DatasetLesion = lesionDataset(dataPath = testDataset ,positive_classes = positive_classes, transforms_config=transformsConfig, dataroot=dataroot, limit=limit)
 
     test_dataset = DatasetLesion
     print(f"Test Dataset Size: {len(test_dataset)}")
@@ -539,53 +537,18 @@ def evaluate_faithfulness(testDataset, positive_classes, modelName, bestModelPth
                        'Delta AUC':[mean_delta_auc, std_delta_auc]}
         faithfulness_results[tmap] = map_metrics
 
-        # print(tmap, 'AUC MoRF', np.mean(np.array(map_results[tmap]['auc_morf'], dtype=np.float32)))
-        # print(tmap, 'AUC LeRF', np.mean(np.array(map_results[tmap]['auc_lerf'], dtype=np.float32)))
-        # print(tmap, 'Delta AUC', np.mean(np.array(map_results[tmap]['delta_auc'], dtype=np.float32)))
-
 
     return faithfulness_results, n_images
-
-
-def collate_test(batch):
-    """
-    batch: list of (img, label)
-      - img should be [3,H,W], variable H,W
-    """
-    imgs, image_rois, img_types, labels, img_names = zip(*batch)
-    B = len(imgs)
-
-    proc_imgs = []
-    sizes = []
-    for x in imgs:
-        assert x.dim() == 3, "img must be [C,H,W]"
-        C, H, W = x.shape
-        sizes.append((H, W))
-        proc_imgs.append(x)
-        H_pad, W_pad = H, W
-
-
-
-    batch_imgs = torch.zeros(B, 3, H_pad, W_pad, dtype=proc_imgs[0].dtype)
-
-    for i, x in enumerate(proc_imgs):
-        _, H, W = x.shape
-        batch_imgs[i, :, :H, :W] = x
-
-    labels = torch.stack(labels).view(B, 1)
-    img_types = torch.stack(img_types).view(B, 4)
-
-    return batch_imgs, list(image_rois) ,img_types, labels, list(img_names)
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Faithfulness test")
     parser.add_argument('--testset', type=str, required=True, help='Test set')
     parser.add_argument("--model", type=str, default="CustomResNetBinary50", help="Selection of the model to test")
-    parser.add_argument("--model_weights_path", type=str, default="/bestModels", help="Path to the model weights")
+    parser.add_argument("--model_weights_path", type=str, required=True, help="Path to the model weights")
     parser.add_argument("--dataroot", type=str, default=".", help="Root path to the dataset")
     parser.add_argument("--positive_classes", type=str, nargs='+', help='List of positive classes (Nodulo, Calc_tip_benig)')
-    parser.add_argument("--augmentation_config_path", type=str, default="augment_transform.yaml", help="Path to the augmentation config file")
+    parser.add_argument("--augmentation_config_path", type=str, required=True, help="Path to the augmentation config file")
     parser.add_argument("--seed", type=int, required=True, help="Torch seed")
     parser.add_argument("--json_suffix", type=str, default=None, help="Suffix to append to metrics jsonl filename")
     parser.add_argument("--compare_cam", action='store_true', help="Compare with CAM methods")    
@@ -598,7 +561,7 @@ if __name__ == "__main__":
     transformsConfig = config
 
     faithfulness_metrics_report, n_images = evaluate_faithfulness(args.testset, args.positive_classes, args.model , args.model_weights_path, 
-                      dataroot=args.dataroot, transformsConfig=transformsConfig,limit = 10000, compare_cam = args.compare_cam)
+                      dataroot=args.dataroot, transformsConfig=transformsConfig,limit = 100000, compare_cam = args.compare_cam)
 
     final_metrics = { "Seed": args.seed,
                       "Architecture": args.model,
@@ -608,6 +571,6 @@ if __name__ == "__main__":
                       "Faithfulness": faithfulness_metrics_report
                     }
 
-    json_name = "Final_metrics_runs.jsonl" if not json_suffix else f"Final_metrics_runs_{json_suffix}.jsonl"
+    json_name = "Final_image_perturbation_results.jsonl" if not json_suffix else f"Final_image_perturbation_results_{json_suffix}.jsonl"
     with open(json_name, "a") as f:
         json.dump(final_metrics, f, indent=4)
