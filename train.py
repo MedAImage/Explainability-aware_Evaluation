@@ -76,7 +76,7 @@ if __name__=="__main__":
     parser.add_argument("--seed_split", type=int, default=76014, help="Seed split for saving the model")
     parser.add_argument("--number_of_epochs", type=int, default=100, help="Number of epochs to train the model")
     parser.add_argument("--patience", type=int, default=5, help="Number of epochs to wait for improvement")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate for the optimizer")
     parser.add_argument("--model", type=str, default="CustomResNetBinary", help="Selection of the model to train")
     parser.add_argument("--dataroot", type=str, default=".", help="Root path to the dataset")
@@ -99,9 +99,9 @@ if __name__=="__main__":
     print(f"Probability threshold for classification: {probability_threshold}")
     fix_seed(args.seed)
 
-    # LOAD YAML CONFIG (usar solo channels)
+    # LOAD YAML DATA CONFIG
     config = load_yaml_config(args.augmentation_config_path) or {}
-    transformsConfig = config  # pasamos el dict al dataset
+    transformsConfig = config  
 
     channels_list = config.get("channels", [])
     print(f"[train] YAML cargado de: {args.augmentation_config_path}")
@@ -133,6 +133,8 @@ if __name__=="__main__":
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     model = model.to(device) 
+
+    fix_seed(args.seed)
     
     #LOADING THE DATASET:
     TrainDatasetJson = args.trainset
