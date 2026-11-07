@@ -28,7 +28,7 @@ def fix_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def train(epoch = 0):
+def train():
     model.train()
     running_loss = 0.0
     for inputs, _,types, labels, _ in train_data_loader:
@@ -45,7 +45,7 @@ def train(epoch = 0):
     return avg_train_loss
 
 
-def validation (epoch = 0):
+def validation():
     model.eval()
     val_labels=[]
     val_predictions=[]
@@ -173,8 +173,8 @@ if __name__=="__main__":
 
     #TRAINING/VALIDATION LOOP
     for epoch in tqdm(range(EPOCHS)):
-        trainloss = train(epoch)
-        avgValLoss, val_labels, val_predictions = validation(epoch)
+        trainloss = train()
+        avgValLoss, val_labels, val_predictions = validation()
         train_loss.append(trainloss)
         validation_loss.append(avgValLoss)
         print(f"Epoch [{epoch+1}/{EPOCHS}]||Train Loss: {trainloss:.4f}||Validation Loss: {avgValLoss:.4f}\n")
