@@ -8,6 +8,15 @@ This repository contains all the necessary code to reproduce our experiments for
 Data and results can be downloaded using this [link](https://unexes-my.sharepoint.com/:f:/g/personal/pilarb_unex_es/IgCqpDamD-eLS72AecX2B8hUARQbNI5aEcKYVoxqR2SXn6M?e=EVqQyc).
 
 
+## Set up and requirements
+
+Install all the required dependencies using:
+
+```bash
+pip install -r requirements.txt
+```
+
+The requirements file specifies the package versions used in our experiments, including Pytorch and Torchvisions builds for CUDA 12.1.
 
 ## Dataset
 
@@ -230,6 +239,54 @@ As with training, all models trained in our experiments for each type of lesion 
 * --data_split_path: path to the directory containing the K-fold split.
 
 The script creates a directory called *ALL_metrics* containing a JSONL file for each data configuration and split. Each file includes the evaluation metrics for all the models trained using the corresponding data configuration and split. 
+
+### Roi Perturbation Evaluation
+
+The script *get_roi_perturbation_results.py* computes ROI Energy Fracton using the original and perturbed annotations while keeping the contribution maps fixed. This allows us to meadure its sensitivity to controlled changes in ROI size and position, complementing the prediciton-based faithfulness assessment performed through image perturbations.
+
+To run this script you must specify the following arguments:
+
+* --testset: path to the JSON file containing the test set.
+* --seed: random generated Torch seed
+* --model: backbone architecture.
+* --model_weights_path: path to the model file.
+* --dataroot: path to the directory containing the images' folder (*outDat*).
+* --positive_classes: lesion name used as the target class during model training.
+* --metrics_run_path: path to the directory where the metrics file will be saved.
+* --json_suffix: optional suffix to be added to the name of the metrics file.
+* --augmentation_config_path: data configuration file used for training the model.
+
+The script saves all the results in the current working folder with the filename *Final_ROI_perturbation_{JSON_SUFFIX}.jsonl*, the final suffix is the value provided through the *--json_suffix* argument. If there is no suffix, the file will be saved with the name *Final_ROI_perturbation_results.jsonl*.
+
+
+Similarly to *run_get_main_metrics.py*, the script *run_roi_perturbation_test.py* can make the evaluation across trained models using a similiar command-line arguments structure.
+
+
+### Faithfulness Evaluation
+
+A map may overlap with the annotated lesion without accurately representing the information the model uses. We therefore evaluate faithfulness by measuring how perturbations guided by explanation maps affect the model's predictions.
+
+The script *get_xai_perturbation_based_results.py* progressively replaces image regions with their mean-filtered counterparts, following two ordering strategies:
+
+* Most Relevant First (MoRF)
+* Least Relevant First (LeRF)
+
+Comparing the resulting prediction curves assesses whether pertubed regions assigned higher causes a greater decrease in the predicted probability of the positive class.
+
+The script accepts the following arguments:
+
+* --testset: path to the JSON file containing the test set.
+* --model: backbone architecture.
+* --model_weights_path: path to the model file.
+* --dataroot: path to the directory containing the images' folder (*outDat*).
+* --positive_classes: lesion name used as the target class during model training.
+* --augmentation_config_path: data configuration file used for training the model.
+* --seed: training seed recorded.
+* --json_suffix: optional suffix to be added to the name of the metrics file.
+* --compare_cam: optional argument to obtain comparison metrics with CAM methods. 
+
+The results are saved in current working folder with the name *Final_image_perturbation_results_{JSON_SUFFIX}.jsonl*. If no suffix is provided, the filename defaults to *Final_image_perturbation_results.jsonl*.
+
 
 ## Results analysis
 
