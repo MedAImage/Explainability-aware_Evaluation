@@ -208,7 +208,9 @@ The script trains a total of 625 models per lesion type, varying the backbone, t
 
 ## Evaluation
 
-Once a model is trained, it can be evaluated using *get_main_metrics.py*. This script generates a report in JSON format containing different metrics: standard evaluation metrics (precision, recall, F1-score, ...), explainability-aware versions of those metrics, as well as metrics used to assess the fidelity and quality of the generated contribution maps.
+### Predictive performance and explainability evaluation
+
+Once a model is trained, it can be evaluated using *get_main_metrics.py*. This script generates a report in JSON format containing different metrics: standard evaluation metrics (precision, recall, F1-score, ...), explainability-aware extensions of those metrics, as well as metrics used to assess the fidelity and quality of the generated contribution maps.
 
 To run the script, you must specify the following arguments:
 
@@ -228,9 +230,6 @@ Additionally, the script allows for visualizing the generated contribution maps 
 
 To visualize the maps, it is necessary to add the *--show_maps* option to the list of arguments. Additionally, to obtain comparison metrics with CAM methods, you must specify the *--compare_cam* argument. If both arguments are enabled, the CAM maps are included in the visualization.
 
-
-### Evaluation of all trained models
-
 As with training, all models trained in our experiments for each type of lesion can be evaluated using a single script. Specifically, you can use *run_get_main_metrics.py* with the following arguments: 
 
 * --models_path: path to the directory containing all the trained models.
@@ -240,9 +239,9 @@ As with training, all models trained in our experiments for each type of lesion 
 
 The script creates a directory called *ALL_metrics* containing a JSONL file for each data configuration and split. Each file includes the evaluation metrics for all the models trained using the corresponding data configuration and split. 
 
-### Roi Perturbation Evaluation
+### Roi perturbation evaluation
 
-The script *get_roi_perturbation_results.py* computes ROI Energy Fracton using the original and perturbed annotations while keeping the contribution maps fixed. This allows us to meadure its sensitivity to controlled changes in ROI size and position, complementing the prediciton-based faithfulness assessment performed through image perturbations.
+The script *get_roi_perturbation_results.py* computes ROI Energy Fracton using the original and perturbed annotations while keeping the contribution maps fixed. This allows us to analyze its sensitivity to controlled changes in ROI size and position.
 
 To run this script you must specify the following arguments:
 
@@ -262,7 +261,7 @@ The script saves all the results in the current working folder with the filename
 Similarly to *run_get_main_metrics.py*, the script *run_roi_perturbation_test.py* can make the evaluation across trained models using a similiar command-line arguments structure.
 
 
-### Faithfulness Evaluation
+### Perturbation-based faithfulness evaluation
 
 A map may overlap with the annotated lesion without accurately representing the information the model uses. We therefore evaluate faithfulness by measuring how perturbations guided by explanation maps affect the model's predictions.
 
@@ -287,6 +286,7 @@ The script accepts the following arguments:
 
 The results are saved in current working folder with the name *Final_image_perturbation_results_{JSON_SUFFIX}.jsonl*. If no suffix is provided, the filename defaults to *Final_image_perturbation_results.jsonl*.
 
+To run the test on a set of models, use *run_xai_perturbation_based_test.py* specifying the folder containing the model files.
 
 ## Results analysis
 
