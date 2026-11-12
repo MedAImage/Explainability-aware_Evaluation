@@ -35,13 +35,10 @@ for modelfile in models:
     seed = model_fields[2]
     suffix = '_'.join(model_fields[3:-1])
     K = model_fields[-1]
-    # Bias = model_fields[-1]
     print(modelfile)
     print(model_fields)
     print(suffix)
     print(K)
-    # print('Bias', Bias)
-    # print('----')
 
     testset = f'{data_split_path}/{K}/joined_dataset_test_{positive_class}_76014.json'
 
