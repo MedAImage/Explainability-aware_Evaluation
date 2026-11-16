@@ -298,7 +298,9 @@ This repository contains several tools to summarize and visualize the metrics in
 * `analyze_roi_perturbation_results.py`: analyzes the sensitivity of ROI Energy Fraction to changes in annotation size and position. The script generates two figures showing how the score changes relative to the original ones across lesion types, model architectures and energy thresholds.
 * `analyze_xai_perturbation_based_results.py`: compares the faithfulness of different explanation methods using ΔAUC, defined as AUC LeRF − AUC MoRF. It generates boxplots for each model architecture, showing the distribution of scores across seeds and folds.
 * `analyze_performance_across_datasets.py`: compares the standard and explainability-aware performance metrics for INbreast, VinDR and the combined dataset of both. To this end, the script generates heatmaps to show the performance across datasets and calculates Spearman and Pearson correlation between configuration-level performance on INbreast and VinDR, averaged across seeds and folds.
-* `analyze_bias_effect.py`: analyzs the effect of classifier bias on contribution map metrics. The script generates figures to compare the effects of including versus omitting the bias in the classification maps, and compares different bias values against a zero-bias reference. Using CCC and ROI energy fraction at an activation threshold of 0.75.
+* `analyze_bias_effect.py`: analyzes the effect of classifier bias on contribution map metrics. The script generates figures to compare the effects of including versus omitting the bias in the classification maps, and compares different bias values against a zero-bias reference. Using CCC and ROI energy fraction at an activation threshold of 0.75.
+
+* `xai_statistical_analysis.py`: This script performs paired statistical comparisons between contribution maps and other XAI methods and perturbation-based metrics. For this purpose, it reports mean differences, bootstrap confidence intervals and Wilcoxon p-values adjusted using Holm's correction.
 
 If you need any help or have any suggestions, please contact us:
 
