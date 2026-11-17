@@ -307,10 +307,35 @@ python results_analysis/analyze_performance_results.py \
   --positive_class Nodulo \
   --file_suffix Nodulo
 ```
-In the execution example `--metrics_path` is a folder where all the metrics from the executions have been saved. The script displays the results in the terminal and generates two images in `.png` format called `performance_metrics_{file_suffix}.png` which represents the standard and explainability-aware performance across the different configurations and `metrics_penalization_{file_suffix}.png`, which shows the relative reduction in F1-score and AUC when incorporating explainability across architectures, data configurations and energy thresholds. 
+Numerical results are displayed in the terminal. The figures are saved in current working directory as `performance_metrics_{file_suffix}.png` and `metrics_penalization_{file_suffix}.png`
 
 * `analyze_stability_results.py`: analyzes the stability and robustness of the models across the different data splits and seeds. To visualize this, the script generates a heatmap comparing the standard deviation of the standard and explainability-aware versions of F1-Score and AUC. It also generates swarmplots depicting the effect of different random seeds and data partitioning on the performance of the models.
+To run the script, you need to provide these three arguments:
+
+    * --metrics_path: path to the folder containing the `JSONL` files.
+    * --positive_class: Lesion name to be classified.
+    * --file_suffix: Suffix for PNG files.
+
+For example, run the following command in the terminal:
+
+```bash
+python results_analysis/analyze_stability_results.py \
+  --metrics_path Debug/Results/Nodulo_main_metrics/Nodulo_final_metrics \
+  --positive_class Nodulo \
+  --file_suffix Nodulo
+```
+
+
+Numerical results are displayed in the terminal. Three figures are saved in current working directory as `std_heatmpas_{--file_suffix}.png`, `fold_seed_distribution_all_F1-score_{--file_suffix}.png`, and `fold_seed_distribution_all_AUC_{--file_suffix}.png`
+
+
+
 * `analyze_xai_results.py`: analyzes the fidelity and quality of XAI methods by evaluating the correspondence between explanation maps and model predictions, as well as the alignment of highlighted image regions with the data annotations. For this purpose, it generates a table with the mean and standard deviation of the Spearman correlation coefficient for each architecture and explainability method. In addition, it generates a boxplot comparing the pointing game accuracy of the different methods, and a swarmplot showing the ROI energy fraction provided by each explanation map for different architectures and energy thresholds.
+
+
+
+
+
 * `analyze_roi_perturbation_results.py`: analyzes the sensitivity of ROI Energy Fraction to changes in annotation size and position. The script generates two figures showing how the score changes relative to the original ones across lesion types, model architectures and energy thresholds.
 * `analyze_xai_perturbation_based_results.py`: compares the faithfulness of different explanation methods using ΔAUC, defined as AUC LeRF − AUC MoRF. It generates boxplots for each model architecture, showing the distribution of scores across seeds and folds.
 * `analyze_performance_across_datasets.py`: compares the standard and explainability-aware performance metrics for INbreast, VinDR and the combined dataset of both. To this end, the script generates heatmaps to show the performance across datasets and calculates Spearman and Pearson correlation between configuration-level performance on INbreast and VinDR, averaged across seeds and folds.
