@@ -293,6 +293,22 @@ To run the test on a set of models, use *run_xai_perturbation_based_test.py* spe
 This repository contains several tools to summarize and visualize the metrics in the JSON files obtained from the evaluation.
 
 * `analyze_performance_results.py`: analyzes the performance of the models using standard and explainability-aware metrics. For this purpose, the script generates a table with all numeric results, bar charts to compare standard and explainability-aware metrics, and heatmaps detailing the explainability penalty of F1-Score and AUC per architecture, energy threshold, and data configuration.
+To run the script, you need to provide these three arguments:
+
+    * --metrics_path: path to the folder containing the `JSONL` files.
+    * --positive_class: Lesion name to be classified.
+    * --file_suffix: Suffix for PNG files.
+
+For example, run the following command in the terminal:
+
+```bash
+python results_analysis/analyze_performance_results.py \
+  --metrics_path Debug/Results/Nodulo_main_metrics/Nodulo_final_metrics \
+  --positive_class Nodulo \
+  --file_suffix Nodulo
+```
+In the execution example `--metrics_path` is a folder where all the metrics from the executions have been saved. The script displays the results in the terminal and generates two images in `.png` format called `performance_metrics_{file_suffix}.png` which represents the standard and explainability-aware performance across the different configurations and `metrics_penalization_{file_suffix}.png`, which shows the relative reduction in F1-score and AUC when incorporating explainability across architectures, data configurations and energy thresholds. 
+
 * `analyze_stability_results.py`: analyzes the stability and robustness of the models across the different data splits and seeds. To visualize this, the script generates a heatmap comparing the standard deviation of the standard and explainability-aware versions of F1-Score and AUC. It also generates swarmplots depicting the effect of different random seeds and data partitioning on the performance of the models.
 * `analyze_xai_results.py`: analyzes the fidelity and quality of XAI methods by evaluating the correspondence between explanation maps and model predictions, as well as the alignment of highlighted image regions with the data annotations. For this purpose, it generates a table with the mean and standard deviation of the Spearman correlation coefficient for each architecture and explainability method. In addition, it generates a boxplot comparing the pointing game accuracy of the different methods, and a swarmplot showing the ROI energy fraction provided by each explanation map for different architectures and energy thresholds.
 * `analyze_roi_perturbation_results.py`: analyzes the sensitivity of ROI Energy Fraction to changes in annotation size and position. The script generates two figures showing how the score changes relative to the original ones across lesion types, model architectures and energy thresholds.
