@@ -298,7 +298,7 @@ This repository contains several tools to summarize and visualize the metrics in
     * --positive_class: lesion name.
     * --file_suffix: suffix added to the generated image files.
 
-	The numerical results are displayed in the terminal. The figures are saved in the current working directory as `performance_metrics_{file_suffix}.png` and metrics_penalization_{file_suffix}.png`
+	The numerical results are displayed in the terminal. The figures are saved in the current working directory as `performance_metrics_{file_suffix}.png` and `metrics_penalization_{file_suffix}.png`.
 
 * `analyze_stability_results.py`: analyzes the stability and robustness of the models across the different data splits and seeds. To visualize this, the script generates a heatmap comparing the standard deviation of the standard and explainability-aware versions of F1-Score and AUC. It also generates swarmplots depicting the effect of different random seeds and data partitioning on the performance of the models. To run the script, you need to provide these three arguments:
 
@@ -306,7 +306,7 @@ This repository contains several tools to summarize and visualize the metrics in
     * --positive_class: lesion name.
     * --file_suffix: suffix added to the generated image files.
 
-	The graphical results are saved in the current working directory as `std_heatmpas_{--file_suffix}.png`, `fold_seed_distribution_all_F1-score_{--file_suffix}.png`, and `fold_seed_distribution_all_AUC_{--file_suffix}.png. Additionally, a table containing the results of a variance-component analysis is displayed in the terminal.
+	The graphical results are saved in the current working directory as `std_heatmpas_{file_suffix}.png`, `fold_seed_distribution_all_F1-score_{file_suffix}.png`, and `fold_seed_distribution_all_AUC_{file_suffix}.png`. Additionally, a table containing the results of a variance-component analysis is displayed in the terminal.
 
 
 
