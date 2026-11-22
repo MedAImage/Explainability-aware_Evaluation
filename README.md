@@ -284,7 +284,7 @@ The script accepts the following arguments:
 * --json_suffix: optional suffix to be added to the name of the metrics file.
 * --compare_cam: optional argument to obtain comparison metrics with CAM methods. 
 
-The results are saved in current working folder with the name *Final_image_perturbation_results_{JSON_SUFFIX}.jsonl*. If no suffix is provided, the filename defaults to *Final_image_perturbation_results.jsonl*.
+The results are saved in the current working folder with the name *Final_image_perturbation_results_{JSON_SUFFIX}.jsonl*. If no suffix is provided, the filename defaults to *Final_image_perturbation_results.jsonl*.
 
 To run the test on a set of models, use *run_xai_perturbation_based_test.py* specifying the folder containing the model files.
 
