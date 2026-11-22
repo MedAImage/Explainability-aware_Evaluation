@@ -292,56 +292,38 @@ To run the test on a set of models, use *run_xai_perturbation_based_test.py* spe
 
 This repository contains several tools to summarize and visualize the metrics in the JSON files obtained from the evaluation.
 
-* `analyze_performance_results.py`: analyzes the performance of the models using standard and explainability-aware metrics. For this purpose, the script generates a table with all numeric results, bar charts to compare standard and explainability-aware metrics, and heatmaps detailing the explainability penalty of F1-Score and AUC per architecture, energy threshold, and data configuration.
+* `analyze_performance_results.py`: analyzes the performance of the models using standard and explainability-aware metrics. For this purpose, the script generates a table with the numerical results, bar charts to compare standard and explainability-aware metrics, and heatmaps detailing the explainability penalty of F1-Score and AUC per architecture, energy threshold, and data configuration.
 To run the script, you need to provide these three arguments:
 
     * --metrics_path: path to the folder containing the `JSONL` files.
-    * --positive_class: Lesion name to be classified.
-    * --file_suffix: Suffix for PNG files.
+    * --positive_class: lesion name.
+    * --file_suffix: suffix added to the generated image files.
 
-For example, run the following command in the terminal:
-
-```bash
-python results_analysis/analyze_performance_results.py \
-  --metrics_path Debug/Results/Nodulo_main_metrics/Nodulo_final_metrics \
-  --positive_class Nodulo \
-  --file_suffix Nodulo
-```
-Numerical results are displayed in the terminal. The figures are saved in current working directory as `performance_metrics_{file_suffix}.png` and `metrics_penalization_{file_suffix}.png`
+Numerical results are displayed in the terminal. The figures are saved in the current working directory as `performance_metrics_{file_suffix}.png` and metrics_penalization_{file_suffix}.png`
 
 * `analyze_stability_results.py`: analyzes the stability and robustness of the models across the different data splits and seeds. To visualize this, the script generates a heatmap comparing the standard deviation of the standard and explainability-aware versions of F1-Score and AUC. It also generates swarmplots depicting the effect of different random seeds and data partitioning on the performance of the models.
 To run the script, you need to provide these three arguments:
 
     * --metrics_path: path to the folder containing the `JSONL` files.
-    * --positive_class: Lesion name to be classified.
-    * --file_suffix: Suffix for PNG files.
+    * --positive_class: lesion name.
+    * --file_suffix: suffix added to the generated image files.
 
-For example, run the following command in the terminal:
-
-```bash
-python results_analysis/analyze_stability_results.py \
-  --metrics_path Debug/Results/Nodulo_main_metrics/Nodulo_final_metrics \
-  --positive_class Nodulo \
-  --file_suffix Nodulo
-```
-
-
-Numerical results are displayed in the terminal. Three figures are saved in current working directory as `std_heatmpas_{--file_suffix}.png`, `fold_seed_distribution_all_F1-score_{--file_suffix}.png`, and `fold_seed_distribution_all_AUC_{--file_suffix}.png`
+The graphical results are saved in the current working directory as `std_heatmpas_{--file_suffix}.png`, `fold_seed_distribution_all_F1-score_{--file_suffix}.png`, and `fold_seed_distribution_all_AUC_{--file_suffix}.png. Additionally, a table containing the results of a variance-component analysis is displayed in the terminal.
 
 
 
-* `analyze_xai_results.py`: analyzes the fidelity and quality of XAI methods by evaluating the correspondence between explanation maps and model predictions, as well as the alignment of highlighted image regions with the data annotations. For this purpose, it generates a table with the mean and standard deviation of the Spearman correlation coefficient for each architecture and explainability method. In addition, it generates a boxplot comparing the pointing game accuracy of the different methods, and a swarmplot showing the ROI energy fraction provided by each explanation map for different architectures and energy thresholds.
+* `analyze_xai_results.py`: analyzes the fidelity and quality of XAI methods by evaluating the correspondence between explanation maps and model predictions, as well as the alignment of the highlighted image regions with the data annotations. For this purpose, it generates a table with the mean and standard deviation of the Spearman correlation coefficient for each architecture and explainability method. In addition, it generates a boxplot comparing the pointing game accuracy of the different methods, and a swarmplot showing the ROI energy fraction provided by each explanation map for different architectures and energy thresholds.
 
 
 
 
 
-* `analyze_roi_perturbation_results.py`: analyzes the sensitivity of ROI Energy Fraction to changes in annotation size and position. The script generates two figures showing how the score changes relative to the original ones across lesion types, model architectures and energy thresholds.
-* `analyze_xai_perturbation_based_results.py`: compares the faithfulness of different explanation methods using ΔAUC, defined as AUC LeRF − AUC MoRF. It generates boxplots for each model architecture, showing the distribution of scores across seeds and folds.
-* `analyze_performance_across_datasets.py`: compares the standard and explainability-aware performance metrics for INbreast, VinDR and the combined dataset of both. To this end, the script generates heatmaps to show the performance across datasets and calculates Spearman and Pearson correlation between configuration-level performance on INbreast and VinDR, averaged across seeds and folds.
-* `analyze_bias_effect.py`: analyzes the effect of classifier bias on contribution map metrics. The script generates figures to compare the effects of including versus omitting the bias in the classification maps, and compares different bias values against a zero-bias reference. Using CCC and ROI energy fraction at an activation threshold of 0.75.
-
-* `xai_statistical_analysis.py`: This script performs paired statistical comparisons between contribution maps and other XAI methods and perturbation-based metrics. For this purpose, it reports mean differences, bootstrap confidence intervals and Wilcoxon p-values adjusted using Holm's correction.
+* `analyze_roi_perturbation_results.py`: analyzes the sensitivity of the ROI Energy Fraction to variations in size and position of the annotations. The script generates two figures showing how the score changes in relation to the original one (original annotations) across lesion types, model architectures and energy thresholds.
+* `analyze_xai_perturbation_based_results.py`: compares the faithfulness of different explanation methods using ΔAUC, defined as AUC LeRF − AUC MoRF. It generates boxplots for each model architecture, showing the distribution of ΔAUC across seeds and folds.
+* `analyze_performance_across_datasets.py`: compares the standard and explainability-aware performance metrics for INbreast, VinDR and the combined dataset. The script generated a figure showing the performance of the different models across datasets and calculates Spearman and Pearson correlation between configuration-level performance on INbreast and VinDR, averaged across seeds and folds.
+<!-- * `analyze_bias_effect.py`: analyzes the effect of the classifier bias term on the contribution maps. The script generates figures to compare the effects of including versus omitting the bias in the classification maps, and compares different bias values against a zero-bias reference. Using CCC and ROI energy fraction at an activation threshold of 0.75.
+ -->
+* `xai_statistical_analysis.py`: This script performs an statistical analysis of the quantitative comparison between contribution maps and other XAI methods. For this purpose, it reports mean differences, confidence intervals and Wilcoxon p-values adjusted using Holm's correction for the different metrics used in the comparison.
 
 If you need any help or have any suggestions, please contact us:
 
