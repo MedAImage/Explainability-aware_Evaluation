@@ -11,6 +11,7 @@ if __name__ == "__main__":
                     help="Path to the files containing the main XAI results")
     parser.add_argument("--xai_perturbation_results_path", type=str, required=True,
                     help="Path to the files containing the XAI perturbation-based results")
+    parser.add_argument("--show_latex", action="store_true", help="Print LaTeX tables") 
     
     args = parser.parse_args()
 
@@ -54,8 +55,10 @@ if __name__ == "__main__":
         
     stats_all_metrics = pd.concat(all_stats_results)
     stats_all_metrics = stats_all_metrics.set_index(["Metric", "Comparison"]).round(3)
+    print("Statistical analysis of the quantitative comparison between explanation methods")
     print(stats_all_metrics)
 
-    # latex_table = stats_all_metrics.to_latex(float_format = "%.4f", escape=False)
-    # print(latex_table) 
+    if args.show_latex:
+        latex_table = stats_all_metrics.to_latex(float_format = "%.4f", escape=False)
+        print(latex_table) 
 

@@ -478,6 +478,7 @@ if __name__ == "__main__":
     
     parser.add_argument("--data_configurations", type=str, nargs='+', required=True,
                                 help="Data configurations (Bl, P1, P2, A1, A2)")
+    parser.add_argument("--show_latex", action="store_true", help="Print LaTeX tables")
     
 
     args = parser.parse_args()
@@ -487,14 +488,13 @@ if __name__ == "__main__":
     path_to_metrics_INbreast = args.metrics_path_inbreast
     lesion=args.positive_class
     metrics=args.metrics
-    lesion_title = "Mass" if lesion=='Nodulo' else 'Microcalcifications'
     dconfig = args.data_configurations
 
     experiment_results = {}
 
-    experiment_results['all'] = create_dictionary_from_results(path_to_metrics_all, lesion, 0.75)
-    experiment_results['VinDr'] = create_dictionary_from_results(path_to_metrics_VinDr, lesion, 0.75, 'VinDr')
-    experiment_results['INbreast'] = create_dictionary_from_results(path_to_metrics_INbreast, lesion, 0.75, 'INbreast')
+    experiment_results['all'] = create_dictionary_from_results(path_to_metrics_all, 0.75)
+    experiment_results['VinDr'] = create_dictionary_from_results(path_to_metrics_VinDr, 0.75, 'VinDr')
+    experiment_results['INbreast'] = create_dictionary_from_results(path_to_metrics_INbreast, 0.75, 'INbreast')
 
     df_std = {}
     df_exp = {}
@@ -509,13 +509,13 @@ if __name__ == "__main__":
     df_exp_75 = df_exp
 
     experiment_results_25 = {}
-    experiment_results_25['all'] = create_dictionary_from_results(path_to_metrics_all, lesion, 0.25)
-    experiment_results_25['VinDr'] = create_dictionary_from_results(path_to_metrics_VinDr, lesion, 0.25, 'VinDr')
-    experiment_results_25['INbreast'] = create_dictionary_from_results(path_to_metrics_INbreast, lesion, 0.25, 'INbreast')    
+    experiment_results_25['all'] = create_dictionary_from_results(path_to_metrics_all, 0.25)
+    experiment_results_25['VinDr'] = create_dictionary_from_results(path_to_metrics_VinDr, 0.25, 'VinDr')
+    experiment_results_25['INbreast'] = create_dictionary_from_results(path_to_metrics_INbreast, 0.25, 'INbreast')    
     experiment_results_50 = {}
-    experiment_results_50['all'] = create_dictionary_from_results(path_to_metrics_all, lesion, 0.50)
-    experiment_results_50['VinDr'] = create_dictionary_from_results(path_to_metrics_VinDr, lesion, 0.50, 'VinDr')
-    experiment_results_50['INbreast'] = create_dictionary_from_results(path_to_metrics_INbreast, lesion, 0.50, 'INbreast')    
+    experiment_results_50['all'] = create_dictionary_from_results(path_to_metrics_all, 0.50)
+    experiment_results_50['VinDr'] = create_dictionary_from_results(path_to_metrics_VinDr, 0.50, 'VinDr')
+    experiment_results_50['INbreast'] = create_dictionary_from_results(path_to_metrics_INbreast, 0.50, 'INbreast')    
 
     df_exp_25 = {}
     df_exp_50 = {}
@@ -532,7 +532,7 @@ if __name__ == "__main__":
 
     df_all = pd.concat([df_std, df_exp_temp], axis=1)
 
-    fig, axes, values = plot_dataset_heatmaps(df_all, lesion=lesion_title, preprocessings=tuple(dconfig))
+    fig, axes, values = plot_dataset_heatmaps(df_all, lesion=lesion, preprocessings=tuple(dconfig))
 
     plt.savefig("ranking_per_dataset_"+lesion+".png")
     plt.show()
@@ -553,11 +553,13 @@ if __name__ == "__main__":
         preprocessings=tuple(dconfig)
     )
 
+    print("Spearman rank correlation between VinDr-Mammo and INbreast")
     print(
         df_corr.round(3).to_string(
         )
     )
-    
-    latex_table = df_corr.round(3).to_latex(escape=False)
-    print(latex_table) 
+
+    if args.show_latex:
+        latex_table = df_corr.round(3).to_latex(escape=False)
+        print(latex_table) 
     

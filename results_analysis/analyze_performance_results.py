@@ -227,6 +227,7 @@ if __name__ == "__main__":
                             help="Lesion name")
     parser.add_argument("--file_suffix", type=str, required=True,
                             help="Suffix for PNG files")
+    parser.add_argument("--show_latex", action="store_true", help="Print LaTeX tables")    
     
     
 
@@ -236,14 +237,14 @@ if __name__ == "__main__":
     path_to_metrics = args.metrics_path
     lesion=args.positive_class
 
-    experiment_results = create_dictionary_from_results(path_to_metrics, lesion, 0.75)
+    experiment_results = create_dictionary_from_results(path_to_metrics, 0.75)
     df_std = dict_to_df_fold_seed_metric(experiment_results["standard"])
     df_exp = dict_to_df_fold_seed_metric(experiment_results["explain"])
 
     df_exp_75 = df_exp
-    experiment_results_25 = create_dictionary_from_results(path_to_metrics, lesion, 0.25)
+    experiment_results_25 = create_dictionary_from_results(path_to_metrics, 0.25)
     df_exp_25 = dict_to_df_fold_seed_metric(experiment_results_25["explain"])
-    experiment_results_50 = create_dictionary_from_results(path_to_metrics, lesion, 0.5)
+    experiment_results_50 = create_dictionary_from_results(path_to_metrics, 0.5)
     df_exp_50 = dict_to_df_fold_seed_metric(experiment_results_50["explain"])
 
 
@@ -278,6 +279,8 @@ if __name__ == "__main__":
 
     df_mean_metrics = df_all.groupby(["Experiment","Model"]).agg("mean")
 
+    print(f'Standard and explainability-aware metrics for {lesion}')
+
     print(df_mean_metrics)
 
     backbone_order = ["DenseNet", "EfficientNet", "MobileNet", "ResNet18", "ResNet50"]
@@ -286,11 +289,9 @@ if __name__ == "__main__":
     minmax_rows = backbone_order
     minmax_columns = df_std.columns.to_list() + df_exp_temp.columns.to_list()
 
-    # print(df_mean_metrics)
-
-    # latex_table = df_to_latex_with_min_max(df_mean_metrics, minmax_rows=minmax_rows, minmax_columns=minmax_columns)
-
-    # print(latex_table) 
+    if args.show_latex:
+        latex_table = df_to_latex_with_min_max(df_mean_metrics, minmax_rows=minmax_rows, minmax_columns=minmax_columns)
+        print(latex_table) 
     
     
     # Correlations and dispersions
@@ -305,13 +306,14 @@ if __name__ == "__main__":
     metrics = ['F1-score', 'AUC']
     backbones = ["DenseNet", "EfficientNet", "MobileNet", "ResNet18", "ResNet50", "Global"]
 
-    lesion_name = "Mass" if lesion=="Nodulo" else "Microcalcificaciones"
-    df_correlations = compute_df_correlations(df_mean_std, df_mean_exp, metrics, backbones, lesion_name)
+    df_correlations = compute_df_correlations(df_mean_std, df_mean_exp, metrics, backbones, lesion)
+
+    print(f'Configuration ranking correlation and relative metric dispersion for {lesion}')
     print(df_correlations)
-    
-    # latex_corr_table = df_correlations.round(2).to_latex(escape=False)    
-    
-    # print(latex_corr_table)
+
+    if args.show_latex:
+        latex_corr_table = df_correlations.round(2).to_latex(escape=False)    
+        print(latex_corr_table)
 
 
     #Plots for standard vs. explainability-aware performance

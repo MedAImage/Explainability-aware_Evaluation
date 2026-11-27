@@ -8,6 +8,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--metrics_path", type=str, required=True,
                     help="Path to the files containing the main XAI results")
+    parser.add_argument("--show_latex", action="store_true", help="Print LaTeX tables") 
     args = parser.parse_args()
 
     path_to_metrics = args.metrics_path
@@ -37,10 +38,12 @@ if __name__ == "__main__":
     mean_spearman = mean_spearman.reindex(columns = ["$M_C^{+}$", 'EC-Bk', 'EC-Prj', 'GC-Bk', 'GC-Prj', 'GC-Att',
                                                  'SC-Bk', 'SC-Prj', 'SC-Att'])
 
+    print("Spearman correlation between the logit of the target class and the total activation")
     print(mean_spearman)
 
-    # spearman_table = mean_spearman.to_latex(float_format="%.2f")
-    # print(spearman_table)
+    if args.show_latex:
+        spearman_table = mean_spearman.to_latex(float_format="%.2f")
+        print(spearman_table)
 
     energy_colors = {"$M_C^{+}$": "red",
                      'Att': "orange",

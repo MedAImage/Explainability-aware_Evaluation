@@ -119,7 +119,7 @@ def dict_to_df_XAI_perturbation_metric(d):
     return df
 
 
-def create_dictionary_from_results(path_to_metrics, lesion=None, energy_threshold=0.75, dataset_name=None):
+def create_dictionary_from_results(path_to_metrics, energy_threshold=0.75, dataset_name=None):
     if os.path.isdir(path_to_metrics):
         files = os.listdir(path_to_metrics)
         metrics_files = [f for f in files if f.startswith("Final_metrics_runs")]
@@ -149,9 +149,6 @@ def create_dictionary_from_results(path_to_metrics, lesion=None, energy_threshol
     else:
         dataset_name = ''
     for f in metrics_files:
-        # if not f.endswith('.jsonl'):
-        #     continue
-        # print(f)
 
         with open(os.path.join(path_to_metrics, f)) as jfile:
             exp_results = read_jsonl(jfile)

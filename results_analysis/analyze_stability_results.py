@@ -135,7 +135,7 @@ if __name__ == "__main__":
                             help="Lesion name")
     parser.add_argument("--file_suffix", type=str, required=True,
                             help="Suffix for PNG files")
-    
+    parser.add_argument("--show_latex", action="store_true", help="Print LaTeX tables") 
     
 
     args = parser.parse_args()
@@ -144,13 +144,13 @@ if __name__ == "__main__":
     path_to_metrics = args.metrics_path
     lesion=args.positive_class
 
-    experiment_results = create_dictionary_from_results(path_to_metrics, lesion, 0.75)
+    experiment_results = create_dictionary_from_results(path_to_metrics, 0.75)
     df_std = dict_to_df_fold_seed_metric(experiment_results["standard"])
     df_exp = dict_to_df_fold_seed_metric(experiment_results["explain"])
 
     df_all = pd.concat([df_std, df_exp], keys=['std','exp'], names=["version"])
 
-    print(df_all)
+    # print(df_all)
 
     df_std_metrics = df_all.groupby(["version","Experiment","Model"]).agg("std")
 
@@ -213,17 +213,17 @@ if __name__ == "__main__":
 
     variance_results = variance_decomposition(df_all)
 
-    lesion_name = "Mass" if lesion=="Nodulo" else "Microcalcificaciones"
     variance_summary = create_variance_component_df(variance_results, metrics=["F1-score", "AUC"], data_config=["Bl", "P1", "P2", "A1", "A2"], 
-                                                    backbones=["DenseNet", "ResNet50"], lesion=lesion_name)
-    print('Variance-component analysis')
+                                                    backbones=["DenseNet", "ResNet50"], lesion=lesion)
+    print(f'Variance-component analysis for {lesion}')
     print(variance_summary)
     formatters = { col: "{:.4f}".format if col[-1] == r"$V_{total}$" else "{:.2f}".format
                 for col in variance_summary.columns}
 
-    # print(variance_summary.to_latex(formatters=formatters,
-    #             escape=False,
-    #             multicolumn=True,
-    #             multirow=True
-    #         ))
+    if args.show_latex:
+        print(variance_summary.to_latex(formatters=formatters,
+                    escape=False,
+                    multicolumn=True,
+                    multirow=True
+                ))
 
